@@ -3,9 +3,13 @@ on:
   workflow_dispatch:
     inputs:
       module_tag:
-        description: 插件发布版本（留空自动选最新正式插件，如 v0.2.1）
+        description: 插件发布版本（留空自动选最新正式插件，如 v0.2.4）
         type: string
         required: false
+      ui_images:
+        description: 应用已审核的首页、扭蛋和若恋 UI 汉化图片（仅兼容匹配的原版资源）
+        type: boolean
+        default: true
       allow_untested_version:
         description: 允许修补尚未验证兼容性的游戏版本
         type: boolean
@@ -36,6 +40,8 @@ jobs:
       - uses: android-actions/setup-android@v3
       - name: Install Android build tools
         run: sdkmanager 'build-tools;35.0.0' 'platform-tools'
+      - name: Install image patch dependencies
+        run: python -m pip install -r requirements-images.txt
       - name: Test packager
         run: python -m unittest discover -s tests -v
       - name: Prepare private inputs
@@ -45,11 +51,13 @@ jobs:
         run: python ci_prepare.py
       - name: Patch and verify
         env:
+          UI_IMAGES: ${{ inputs.ui_images }}
           MODULE_TAG: ${{ inputs.module_tag }}
           ALLOW_UNTESTED: ${{ inputs.allow_untested_version }}
           KEY_ALIAS: ${{ vars.PATCH_KEY_ALIAS || 'idoly-patcher' }}
         run: |
           options=(--key-alias "$KEY_ALIAS")
+          if [[ "$UI_IMAGES" != 'true' ]]; then options+=(--no-ui-images); fi
           if [[ -n "$MODULE_TAG" ]]; then options+=(--module-tag "$MODULE_TAG"); fi
           if [[ "$ALLOW_UNTESTED" == 'true' ]]; then options+=(--allow-untested-version); fi
           python patcher.py patch "${options[@]}"

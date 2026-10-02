@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Standalone IDOLY PRIDE ARM64 LSPatch packager (Python standard library only)."""
+"""Standalone IDOLY PRIDE ARM64 LSPatch packager."""
 from __future__ import annotations
 
 import argparse
@@ -7,6 +7,8 @@ import hashlib
 import json
 import os
 from pathlib import Path, PurePosixPath
+from copy import copy
+from io import BytesIO
 import re
 import shutil
 import subprocess
@@ -15,7 +17,7 @@ import tempfile
 import urllib.error
 import urllib.parse
 import urllib.request
-from zipfile import ZipFile
+from zipfile import ZipFile, BadZipFile
 
 if sys.version_info < (3, 11):
     raise SystemExit('Idoly-Patcher requires Python 3.11 or newer')
@@ -27,6 +29,7 @@ TESTED_VERSION = '6.0.2'
 LSPATCH_URL = 'https://github.com/JingMatrix/LSPatch/releases/download/v1.2/lspatch-v1.2-487-release.jar'
 LSPATCH_SHA256 = 'd238fdc414d121b7fa454d8b4ccf420df3a8c97d563761861ff92bd9c5da2165'
 LIMIT = 2 * 1024**3
+DEFAULT_IMAGES = Path(__file__).resolve().parent / 'image-patches/ui-6.0.2/manifest.json'
 
 
 def sha256(path):
@@ -61,8 +64,10 @@ def sdk_tool(name):
     suffix = ('.bat' if name == 'apksigner' else '.exe') if os.name == 'nt' else ''
     candidates = list((Path(home) / 'build-tools').glob('*/' + name + suffix))
     candidates = [p for p in candidates if re.fullmatch(r'\d+\.\d+\.\d+', p.parent.name)]
+    if name == 'zipalign':
+        candidates = [p for p in candidates if tuple(map(int, p.parent.name.split('.'))) >= (35, 0, 0)]
     if not candidates:
-        raise ValueError(f'Android SDK build-tools is missing {name}')
+        raise ValueError(f'Android SDK build-tools is missing {name}; install Build Tools 35.0.0 or newer')
     return str(max(candidates, key=lambda p: tuple(map(int, p.parent.name.split('.')))))
 
 
@@ -232,6 +237,22 @@ def sign(source, destination, keystore, alias):
             '--out', destination, source)
 
 
+def verify_alignment(apk):
+    command(sdk_tool('zipalign'), '-c', '-P', '16', '4', apk)
+
+
+def align_apk(source, destination):
+    command(sdk_tool('zipalign'), '-P', '16', '4', source, destination)
+    verify_alignment(destination)
+    # Alignment may change ZIP padding, never entry contents or membership.
+    with ZipFile(source) as before, ZipFile(destination) as after:
+        if before.namelist() != after.namelist():
+            raise ValueError('APK alignment changed the entry list')
+        for name in before.namelist():
+            if before.read(name) != after.read(name):
+                raise ValueError(f'APK alignment changed entry data: {name}')
+
+
 def passwords():
     if not os.environ.get('IDOLY_KS_PASS'):
         raise ValueError('Set IDOLY_KS_PASS; passwords are read only from environment variables')
@@ -262,6 +283,52 @@ def verify_embedded(patched, original, module):
                     raise ValueError('Embedded original game or module was changed')
 
 
+def image_tools():
+    try:
+        import patch_images
+    except ImportError as error:
+        raise ValueError('UI images require: python -m pip install -r requirements-images.txt; '
+                         'or use --no-ui-images') from error
+    return patch_images
+
+
+def patch_wrapper(source, destination, original, modified, manifest):
+    """Update wrapper resources and embedded origin after LSPatch captures original signature."""
+    with ZipFile(source) as before, ZipFile(original) as raw, ZipFile(modified) as translated:
+        names = before.namelist()
+        if len(names) != len(set(names)):
+            raise ValueError('Duplicate LSPatch APK entries')
+        replacements = {'assets/lspatch/origin.apk': modified.read_bytes()}
+        if before.read('assets/lspatch/origin.apk') != original.read_bytes():
+            raise ValueError('LSPatch embedded origin differs before image patch')
+        for asset in manifest['assets']:
+            name = asset['entry']
+            if before.read(name) != raw.read(name):
+                raise ValueError(f'LSPatch wrapper resource differs: {name}')
+            replacements[name] = translated.read(name)
+        with ZipFile(destination, 'w') as after:
+            after.comment = before.comment
+            for entry in before.infolist():
+                after.writestr(copy(entry), replacements.get(entry.filename)
+                               if entry.filename in replacements else before.read(entry))
+        with ZipFile(destination) as after:
+            if after.namelist() != names:
+                raise ValueError('Image patch changed wrapper entry list')
+            for name in names:
+                expected = replacements[name] if name in replacements else before.read(name)
+                if after.read(name) != expected:
+                    raise ValueError(f'Image patch changed unrelated wrapper data: {name}')
+
+
+def check_images(base, manifest):
+    images = image_tools()
+    with tempfile.TemporaryDirectory(prefix='idoly-image-check-') as temporary:
+        output = Path(temporary) / 'base.apk'
+        images.patch_apk(base, manifest, output)
+        images.verify_apk(output, manifest)
+    print('Verified source compatibility, reviewed pixels and unchanged unrelated assets')
+
+
 def patch(args):
     passwords()
     apks = sorted(args.game_dir.resolve().glob('*.apk'))
@@ -284,6 +351,17 @@ def patch(args):
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='.idoly-patch-', dir=args.output.parent) as temporary:
         work = Path(temporary)
+        image_manifest = None if args.no_ui_images else args.image_manifest.resolve()
+        image_spec = None
+        embedded_base = base
+        if image_manifest:
+            images = image_tools()
+            image_spec = images.load_manifest(image_manifest)
+            image_base = work / 'base-images.apk'
+            images.patch_apk(base, image_manifest, image_base)
+            embedded_base = work / 'base-images-aligned.apk'
+            align_apk(image_base, embedded_base)
+            images.verify_apk(embedded_base, image_manifest)
         patched = work / 'patched'
         patched.mkdir()
         command(java_tool('java'), '-Xmx4g', '-jar', lspatch, '-l', '2', '-m', module,
@@ -307,13 +385,33 @@ def patch(args):
                 raise ValueError('Invalid split ID')
             name = 'base.apk' if not split else 'split_' + split + '.apk'
             target = staged / name
+            if not split and image_manifest:
+                # apksigner normalizes LSPatch's overlapping ZIP storage before
+                # Python can safely inspect and rewrite all entries.
+                normalized = work / 'wrapper-normalized.apk'
+                sign(candidate, normalized, args.keystore.resolve(), args.key_alias)
+                image_candidate = work / 'wrapper-images.apk'
+                patch_wrapper(normalized, image_candidate, base, embedded_base, image_spec)
+                candidate = work / 'wrapper-images-aligned.apk'
+                align_apk(image_candidate, candidate)
             sign(candidate, target, args.keystore.resolve(), args.key_alias)
+            verify_alignment(target)
             certs = certificates(target)
             if output_certs is not None and certs != output_certs:
                 raise ValueError('Patched APK signatures differ')
             output_certs = certs
             if not split:
-                verify_embedded(target, base, module)
+                verify_embedded(target, embedded_base, module)
+                if image_manifest:
+                    images.verify_apk(target, image_manifest)
+                    with ZipFile(target) as wrapper:
+                        extracted_origin = work / 'verified-origin.apk'
+                        extracted_origin.write_bytes(wrapper.read('assets/lspatch/origin.apk'))
+                        verify_alignment(extracted_origin)
+                        images.verify_apk(BytesIO(wrapper.read('assets/lspatch/origin.apk')), image_manifest)
+                        original_signature = json.loads(wrapper.read('assets/lspatch/config.json'))['originalSignature']
+                        if hashlib.sha256(bytes.fromhex(original_signature)).hexdigest() not in original_certs:
+                            raise ValueError('Original signature emulation was changed')
             else:
                 with ZipFile(expected[split]) as before, ZipFile(target) as after:
                     for member in before.namelist():
@@ -329,6 +427,11 @@ def patch(args):
                   'module_version': module_info.get('versionName'), 'module_sha256': sha256(module),
                   'lspatch_sha256': LSPATCH_SHA256, 'original_certificates': sorted(original_certs),
                   'output_certificates': sorted(output_certs),
+                  'ui_images': {'enabled': bool(image_manifest),
+                                'manifest_sha256': sha256(image_manifest) if image_manifest else None,
+                                'embedded_base_sha256': sha256(embedded_base),
+                                'origin_alignment_verified': True if image_manifest else None},
+                  'zip_alignment': {'bytes': 4, 'native_page_kb': 16, 'outputs_verified': True},
                   'input_apks': {p.name: sha256(p) for p in apks},
                   'output_apks': {p.name: sha256(p) for p in sorted(staged.glob('*.apk'))}}
         (staged / 'report.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
@@ -398,6 +501,13 @@ def main():
     build.add_argument('--cache', type=Path, default=Path('cache'))
     build.add_argument('--output', type=Path, default=Path('output'))
     build.add_argument('--allow-untested-version', action='store_true')
+    images = build.add_mutually_exclusive_group()
+    images.add_argument('--no-ui-images', action='store_true', help='Keep original game UI images')
+    images.add_argument('--image-manifest', type=Path, default=DEFAULT_IMAGES,
+                        help='Reviewed schema-2 image manifest; defaults to bundled 6.0.2 pack')
+    check = commands.add_parser('check-images', help='Dry run image patch without signing or downloading')
+    check.add_argument('--base', type=Path, default=Path('inputs/game/base.apk'))
+    check.add_argument('--image-manifest', type=Path, default=DEFAULT_IMAGES)
     device = commands.add_parser('pull', help='Copy original installed APKs from a named device')
     device.add_argument('--serial', required=True)
     device.add_argument('--output', type=Path, default=Path('inputs/game'))
@@ -405,11 +515,13 @@ def main():
     try:
         if args.command == 'init-key':
             init_key(args.keystore, args.key_alias)
+        elif args.command == 'check-images':
+            check_images(args.base, args.image_manifest)
         elif args.command == 'patch':
             patch(args)
         else:
             pull(args.serial, args.output)
-    except (ValueError, OSError, KeyError) as error:
+    except (ValueError, OSError, KeyError, BadZipFile) as error:
         parser.exit(1, f'Error: {error}\n')
 
 

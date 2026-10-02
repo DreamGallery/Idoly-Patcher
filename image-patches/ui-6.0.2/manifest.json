@@ -1,0 +1,308 @@
+{
+  "schema_version": 2,
+  "game_version": "6.0.2",
+  "source_manifest_sha256": "d664a2ea5519ef891d71de993d115b42dafc027a0bd8af6c89694d8ba1a8eba0",
+  "assets": [
+    {
+      "entry": "assets/bin/Data/00000000000000000000000000000000",
+      "source_sha256": "48e61ed38e098d5b9464b6d21a06879a01c39259d584e0ea11c36ae632ccc913",
+      "textures": [
+        {
+          "path_id": 19,
+          "name": "sactx-0-1024x2048-ASTC 6x6-HomeAtlas-bd012772",
+          "rgba_sha256": "80c611cd3428b9d4a07d88f9518eee7e16824d5aafd8acfd58ee8a2c8bb36a4c",
+          "regions": [
+            {
+              "box": [
+                273,
+                679,
+                411,
+                720
+              ],
+              "png": "texture-19-00.png",
+              "png_sha256": "089959f4fa7a2c8910467b823db78e5662fb40c63edb3c599723cf1e006c7d78"
+            },
+            {
+              "box": [
+                731,
+                550,
+                835,
+                591
+              ],
+              "png": "texture-19-01.png",
+              "png_sha256": "93d072bd9bd9212871417bfc8c270e2475f2b1e22e8b4bb9696afc2e20947333"
+            },
+            {
+              "box": [
+                694,
+                1387,
+                804,
+                1427
+              ],
+              "png": "texture-19-02.png",
+              "png_sha256": "87d77c8258aa74aa6d4d0d0ad344d0217e106b2d9de6b92eea3312ebf8cee1a2"
+            },
+            {
+              "box": [
+                411,
+                679,
+                549,
+                720
+              ],
+              "png": "texture-19-03.png",
+              "png_sha256": "d81f8508d3cb87c4650d96d5743c40c415323e422a2473be3f34e8d749acb03f"
+            },
+            {
+              "box": [
+                415,
+                802,
+                577,
+                842
+              ],
+              "png": "texture-19-04.png",
+              "png_sha256": "39f22eb1cff7e2824211731908ec25cdcb56e13f949313458cde459b112ef08f"
+            },
+            {
+              "box": [
+                130,
+                108,
+                263,
+                148
+              ],
+              "png": "texture-19-05.png",
+              "png_sha256": "e25d42ea71276e165944073898940fa3fad4f50846ff1bfcb85d542ead096735"
+            },
+            {
+              "box": [
+                791,
+                1802,
+                895,
+                1842
+              ],
+              "png": "texture-19-06.png",
+              "png_sha256": "4314f4ce8434c6936ce02e1ee7029f5f13d0c68852e54d7c9bac68a5cf0f1795"
+            },
+            {
+              "box": [
+                676,
+                1802,
+                791,
+                1842
+              ],
+              "png": "texture-19-07.png",
+              "png_sha256": "de3766d3f0d4f856f21570bb2825088f6c503ab655c1989152808501bd97426b"
+            },
+            {
+              "box": [
+                378,
+                564,
+                515,
+                604
+              ],
+              "png": "texture-19-08.png",
+              "png_sha256": "4be41c7dc27755c9a226406e41beb1a7a0a081a9cc09af836cb002a1a5d37c62"
+            }
+          ]
+        },
+        {
+          "path_id": 24,
+          "name": "sactx-0-1024x2048-ASTC 6x6-GachaAtlas-dafc3479",
+          "rgba_sha256": "d5d84dc09f8f6d1c8d3722a10faa304dbffd98bc8baecb1d6cbda5df10a89b43",
+          "regions": [
+            {
+              "box": [
+                642,
+                1038,
+                773,
+                1105
+              ],
+              "png": "texture-24-00.png",
+              "png_sha256": "f6dd42eb8fa57a90d4242c3756d57b6ae099c59bd76fb9fed183c01cba2c2035"
+            },
+            {
+              "box": [
+                814,
+                1379,
+                918,
+                1446
+              ],
+              "png": "texture-24-01.png",
+              "png_sha256": "293b9c7bd1e658911b3ac79cf1b23f32c6755ec2bc80ee3723a4d719f5dd694b"
+            }
+          ]
+        },
+        {
+          "path_id": 30,
+          "name": "sactx-1-2048x2048-ASTC 6x6-CommonAtlas-06d6728f",
+          "rgba_sha256": "ddc741b9de96b4b9895bf389135582dec3b241683460a44400d3cbf95ab73b4a",
+          "regions": [
+            {
+              "box": [
+                1338,
+                1308,
+                1478,
+                1370
+              ],
+              "png": "texture-30-00.png",
+              "png_sha256": "b6e13ee6e5f0946f3100a95864794a719f8a3e52ed57d328d0268d07d7ab8748"
+            },
+            {
+              "box": [
+                1439,
+                1553,
+                1502,
+                1695
+              ],
+              "png": "texture-30-01.png",
+              "png_sha256": "c0156be0c5cb09dc45d4bde0c2be0b3543fd591791e2f1cf886f9f7e32aa439d"
+            }
+          ]
+        },
+        {
+          "path_id": 5,
+          "name": "sactx-0-2048x2048-ASTC 6x6-LoveAtlas-3307927b",
+          "rgba_sha256": "517b7efa9aad6197d65d7737dc107da239029195bf3ae06aa4c6e4de7183c7fc",
+          "regions": [
+            {
+              "box": [
+                765,
+                813,
+                959,
+                864
+              ],
+              "png": "texture-5-00.png",
+              "png_sha256": "16b1b07f30c0e8fdc8acf580ae9c4b9c2f4b2d293dd88f7089736163605e5762"
+            },
+            {
+              "box": [
+                655,
+                416,
+                895,
+                467
+              ],
+              "png": "texture-5-01.png",
+              "png_sha256": "fe24366035357059848bb070ba0bfed421d6f8f796098c7aeb11afb2ed02bb07"
+            },
+            {
+              "box": [
+                388,
+                75,
+                583,
+                117
+              ],
+              "png": "texture-5-02.png",
+              "png_sha256": "3675dd576906f9a8e5b3ef9e4a01d935b009751915460c978013ba66f22025c2"
+            },
+            {
+              "box": [
+                701,
+                315,
+                897,
+                359
+              ],
+              "png": "texture-5-03.png",
+              "png_sha256": "1c18bb82211bf63c5f64aebf5ce8c3e9957e9db753bd23b1d826887c7808fcde"
+            },
+            {
+              "box": [
+                799,
+                547,
+                883,
+                591
+              ],
+              "png": "texture-5-04.png",
+              "png_sha256": "33d00b694a6f5e0d0cdf0ba7c56f8f6cd4eedaa24bd6830f95de27f0e487f90a"
+            },
+            {
+              "box": [
+                899,
+                30,
+                983,
+                74
+              ],
+              "png": "texture-5-05.png",
+              "png_sha256": "bbc1e9d0295727d6e9955b1f55405ab0b8084e94454790cbb615ec861346d314"
+            },
+            {
+              "box": [
+                655,
+                359,
+                825,
+                416
+              ],
+              "png": "texture-5-06.png",
+              "png_sha256": "046051cd15647ba5fe1e1a25b73ba1e02c0364d05f7929e31e363449485641a3"
+            },
+            {
+              "box": [
+                914,
+                2014,
+                1014,
+                2048
+              ],
+              "png": "texture-5-07.png",
+              "png_sha256": "c985e036ad677d02d7eff6a48d296e91fd0ceb4d36978000891fe14f75ea3f1f"
+            },
+            {
+              "box": [
+                535,
+                276,
+                617,
+                306
+              ],
+              "png": "texture-5-08.png",
+              "png_sha256": "68d77012fd445e72f0b92dd93ff3a9d3a6704aba5858fdcc10ac869d12162ea2"
+            },
+            {
+              "box": [
+                790,
+                669,
+                952,
+                713
+              ],
+              "png": "texture-5-09.png",
+              "png_sha256": "c192ad9d2719bdbee43f10dc9395926909b37556872fd548fef89009b58d12e9"
+            }
+          ]
+        },
+        {
+          "path_id": 17,
+          "name": "sactx-0-1024x2048-ASTC 6x6-LoveADVAtlas-9df05f4f",
+          "rgba_sha256": "1cbce55a773b604e1fdc3cf8e16dc0277d7c52c1fd6d554b7c60a7b962c0b53b",
+          "regions": [
+            {
+              "box": [
+                100,
+                584,
+                167,
+                620
+              ],
+              "png": "texture-17-00.png",
+              "png_sha256": "c8a2b5b44f599738de176c8766e0bd075af24c5b40f9b466e1f4250b2f921220"
+            },
+            {
+              "box": [
+                775,
+                1792,
+                875,
+                1828
+              ],
+              "png": "texture-17-01.png",
+              "png_sha256": "6ead97a17f9b8ec7105050b48452e214f4ed94180980de4cfd67292624149873"
+            },
+            {
+              "box": [
+                847,
+                2014,
+                946,
+                2048
+              ],
+              "png": "texture-17-02.png",
+              "png_sha256": "6c66f551084aeff038e80b5e0b25fbe729336f2b01b5fe2e30d2487b1973825b"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
