@@ -120,7 +120,7 @@ class PlanningTests(unittest.TestCase):
             Path('game-reference.json').write_text(json.dumps(reference()))
             response = [{'tag_name': 'text-new', 'assets': [{'name': 'manifest.json'}]}, plugin_release()]
             with patch.object(ci_release, 'recipe_hash', return_value='1' * 64), \
-                    patch.object(ci_release, 'api', side_effect=[response, None]):
+                    patch.object(ci_release, 'api', side_effect=[response, None, []]):
                 plan, needed = ci_release.build_plan(None, '6.0.2', True, 'signature', False)
             self.assertTrue(needed)
             self.assertEqual(plan['module_tag'], 'v0.2.5')
@@ -148,6 +148,12 @@ class PlanningTests(unittest.TestCase):
             with self.assertRaises(FileNotFoundError):
                 ci_release.build_plan(None, '6.0.2', True, 'signature', False)
             api.assert_not_called()
+
+    def test_draft_is_found_when_the_tag_endpoint_returns_404(self):
+        draft = {'id': 42, 'tag_name': 'game-6.0.2-plugin-0.3.0-test', 'draft': True}
+        with patch.object(ci_release, 'api', side_effect=[None, [draft]]) as api:
+            self.assertEqual(ci_release.find_release('owner/patcher', draft['tag_name']), draft)
+        self.assertIn('releases?per_page=100&page=1', api.call_args_list[-1].args[0])
 
     def test_prepare_refuses_wrong_game_version_before_signing_or_plugin_download(self):
         with workspace(), patch.dict(os.environ, {'GAME_APKS_URL': 'https://example.invalid/game.xapk',
@@ -228,24 +234,27 @@ class PublicationTests(unittest.TestCase):
         with workspace(), patch.dict(os.environ, {'GITHUB_REPOSITORY': 'owner/patcher', 'GITHUB_SHA': '1' * 40}):
             plan = self.fixture()
             ci_release.bundle(plan)
-            with patch.object(ci_release, 'api', side_effect=[None, {'draft': True, 'assets': self.assets(plan)}]), \
+            with patch.object(ci_release, 'find_release', side_effect=[None, {'id': 42, 'draft': True}]), \
+                    patch.object(ci_release, 'api', return_value={'draft': True, 'assets': self.assets(plan)}) as api, \
                     patch.object(ci_release, 'gh') as gh:
                 ci_release.publish(plan)
             self.assertIn('--draft', gh.call_args_list[0].args)
+            api.assert_called_once_with('repos/owner/patcher/releases/42')
             self.assertEqual(gh.call_args_list[-1].args[-1], '--draft=false')
 
     def test_failed_upload_and_bad_remote_hash_leave_draft_unpublished(self):
         with workspace(), patch.dict(os.environ, {'GITHUB_REPOSITORY': 'owner/patcher', 'GITHUB_SHA': '1' * 40}):
             plan = self.fixture()
             ci_release.bundle(plan)
-            with patch.object(ci_release, 'api', return_value=None), \
+            with patch.object(ci_release, 'find_release', side_effect=[None, {'id': 42, 'draft': True}]), \
                     patch.object(ci_release, 'gh', side_effect=['', ValueError('upload failed')]) as gh:
                 with self.assertRaisesRegex(ValueError, 'upload failed'):
                     ci_release.publish(plan)
                 self.assertFalse(any('--draft=false' in c.args for c in gh.call_args_list))
             assets = self.assets(plan)
             assets[0]['digest'] = 'sha256:' + '0' * 64
-            with patch.object(ci_release, 'api', side_effect=[{'draft': True}, {'draft': True, 'assets': assets}]), \
+            with patch.object(ci_release, 'find_release', return_value={'id': 42, 'draft': True}), \
+                    patch.object(ci_release, 'api', return_value={'draft': True, 'assets': assets}), \
                     patch.object(ci_release, 'gh') as gh:
                 with self.assertRaisesRegex(ValueError, 'checksum mismatch'):
                     ci_release.publish(plan)
@@ -254,7 +263,7 @@ class PublicationTests(unittest.TestCase):
     def test_published_release_is_never_overwritten(self):
         with workspace(), patch.dict(os.environ, {'GITHUB_REPOSITORY': 'owner/patcher'}):
             plan = self.fixture()
-            with patch.object(ci_release, 'api', return_value={'draft': False}), patch.object(ci_release, 'gh') as gh:
+            with patch.object(ci_release, 'find_release', return_value={'draft': False}), patch.object(ci_release, 'gh') as gh:
                 with self.assertRaisesRegex(ValueError, 'refusing to overwrite'):
                     ci_release.publish(plan)
                 gh.assert_not_called()

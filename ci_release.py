@@ -34,6 +34,24 @@ def api(path, missing_ok=False):
     return json.loads(result.stdout)
 
 
+def find_release(repo, tag):
+    current = api(f'repos/{repo}/releases/tags/{quote(tag, safe="")}', True)
+    if current is not None:
+        return current
+    # GitHub's tag endpoint omits drafts until their tag is published.
+    # Listing releases with the same authenticated client includes own drafts.
+    for page in range(1, 101):
+        releases = api(f'repos/{repo}/releases?per_page=100&page={page}')
+        matches = [item for item in releases if item.get('tag_name') == tag]
+        if len(matches) > 1:
+            raise ValueError('Multiple releases use the selected tag')
+        if matches:
+            return matches[0]
+        if len(releases) < 100:
+            return None
+    raise ValueError('Release listing exceeded pagination limit')
+
+
 def repository():
     name = os.environ.get('GITHUB_REPOSITORY', '')
     if not re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+', name):
@@ -79,7 +97,7 @@ def build_plan(tag, game_version, ui_images, game_check, allow_untested):
             'reference_sha256': patcher.sha256(REFERENCE), 'recipe_sha256': recipe_hash()}
     key = hashlib.sha256(json.dumps(plan, sort_keys=True).encode()).hexdigest()[:12]
     plan['release_tag'] = f'game-{game_version}-plugin-{release["tag_name"].removeprefix("v")}-{key}'
-    current = api(f'repos/{plan["repository"]}/releases/tags/{quote(plan["release_tag"], safe="")}', True)
+    current = find_release(plan['repository'], plan['release_tag'])
     build_needed = current is None or current.get('draft', False)
     if not build_needed:
         names = {a['name'] for a in current.get('assets', [])}
@@ -149,8 +167,7 @@ def publish(plan, destination=Path('dist')):
     if repository() != plan['repository']:
         raise ValueError('Release destination changed after planning')
     repo, tag = plan['repository'], plan['release_tag']
-    endpoint = f'repos/{repo}/releases/tags/{quote(tag, safe="")}'
-    current = api(endpoint, True)
+    current = find_release(repo, tag)
     if current and not current.get('draft'):
         raise ValueError('Release is already published; refusing to overwrite it')
     commit = os.environ.get('GITHUB_SHA', '')
@@ -160,12 +177,15 @@ def publish(plan, destination=Path('dist')):
     if not current:
         gh('release', 'create', tag, '--repo', repo, '--target', commit, '--draft',
            '--title', title, '--notes-file', 'cache/release-notes.md')
+        current = find_release(repo, tag)
     else:
         gh('release', 'edit', tag, '--repo', repo, '--title', title,
            '--notes-file', 'cache/release-notes.md')
+    if not current or not current.get('draft') or not isinstance(current.get('id'), int):
+        raise ValueError('Cannot locate the expected release draft')
     paths = [destination / name for name in release_assets(plan)]
     gh('release', 'upload', tag, *paths, '--repo', repo, '--clobber')
-    uploaded = api(endpoint)
+    uploaded = api(f'repos/{repo}/releases/{current["id"]}')
     if not uploaded.get('draft'):
         raise ValueError('Release was published concurrently before upload verification')
     assets = {a['name']: a for a in uploaded['assets']}
