@@ -167,6 +167,29 @@ class PlanningTests(unittest.TestCase):
             self.assertEqual(download.call_count, 1)
             self.assertFalse(Path('secrets/patcher.jks').exists())
 
+    def test_prepare_accepts_play_split_without_version_name(self):
+        with workspace(), patch.dict(os.environ, {'GAME_APKS_URL': 'https://example.invalid/game.xapk',
+                                                 'PATCH_KEYSTORE_BASE64': 'dGVzdA==', 'IDOLY_KS_PASS': 'test'}):
+            Path('game-reference.json').write_text(json.dumps(reference()))
+            Path('inputs/game').mkdir(parents=True)
+            for name in ('base.apk', 'config.arm64_v8a.apk'):
+                Path('inputs/game', name).write_bytes(b'test')
+            plan = {'game_version': '6.0.2', 'game_check': 'signature',
+                    'reference_sha256': patcher.sha256('game-reference.json'),
+                    'module_url': 'https://example.invalid/module.apk', 'module_sha256': 'f' * 64}
+            metadata = {'base.apk': {'versionName': '6.0.2', 'versionCode': '405'},
+                        'config.arm64_v8a.apk': {'split': 'config.arm64_v8a',
+                                                'versionName': '', 'versionCode': '405'}}
+            with patch.object(ci_prepare, 'load_plan', return_value=plan), \
+                    patch.object(ci_prepare, 'download', return_value=Path('game.xapk')) as download, \
+                    patch.object(ci_prepare, 'extract_apks'), \
+                    patch.object(ci_prepare, 'verify_reference') as verify, \
+                    patch.object(ci_prepare, 'package', side_effect=lambda p: metadata[p.name]):
+                ci_prepare.main()
+            verify.assert_called_once()
+            self.assertEqual(download.call_count, 2)
+            self.assertEqual(Path('secrets/patcher.jks').read_bytes(), b'test')
+
 
 class PublicationTests(unittest.TestCase):
     def fixture(self):

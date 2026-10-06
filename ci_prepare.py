@@ -24,8 +24,13 @@ def main():
         extract_apks(archive, Path('inputs/game'))
     apks = sorted(Path('inputs/game').glob('*.apk'))
     verify_reference(apks, REFERENCE, plan['game_check'])
-    if any(package(apk)['versionName'] != plan['game_version'] for apk in apks):
-        raise ValueError('Downloaded game version differs from GAME_VERSION; no fallback to latest')
+    # Play ABI splits can omit versionName. The reference check above enforces
+    # matching package IDs, version codes and certificates across every split.
+    metadata = [package(apk) for apk in apks]
+    base = next(info for info in metadata if not info.get('split'))
+    if base.get('versionName') != plan['game_version']:
+        raise ValueError(f'Downloaded game {base.get("versionName")!r} differs from '
+                         f'GAME_VERSION {plan["game_version"]!r}; no fallback to latest')
     download(plan['module_url'], Path('cache/module.apk'), plan['module_sha256'])
     destination = Path('secrets/patcher.jks')
     destination.parent.mkdir(mode=0o700, exist_ok=True)
