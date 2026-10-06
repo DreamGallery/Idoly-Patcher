@@ -25,8 +25,12 @@ def gh(*args):
     return result.stdout
 
 
-def api(path, missing_ok=False):
-    result = subprocess.run(['gh', 'api', path], capture_output=True, text=True)
+def api(path, missing_ok=False, *, method='GET', data=None):
+    arguments = ['gh', 'api', '--method', method, path]
+    if data is not None:
+        arguments += ['--input', '-']
+    result = subprocess.run(arguments, input=json.dumps(data) if data is not None else None,
+                            capture_output=True, text=True)
     if result.returncode:
         if missing_ok and '(HTTP 404)' in result.stderr:
             return None
@@ -174,13 +178,12 @@ def publish(plan, destination=Path('dist')):
     if not re.fullmatch(r'[0-9a-f]{40}', commit):
         raise ValueError('Missing exact source commit for release')
     title = f'IDOLY PRIDE {plan["game_version"]} / Idoly-localify {plan["module_tag"]}'
+    metadata = {'name': title, 'body': Path('cache/release-notes.md').read_text(encoding='utf-8')}
     if not current:
-        gh('release', 'create', tag, '--repo', repo, '--target', commit, '--draft',
-           '--title', title, '--notes-file', 'cache/release-notes.md')
-        current = find_release(repo, tag)
+        current = api(f'repos/{repo}/releases', method='POST',
+                      data={**metadata, 'tag_name': tag, 'target_commitish': commit, 'draft': True})
     else:
-        gh('release', 'edit', tag, '--repo', repo, '--title', title,
-           '--notes-file', 'cache/release-notes.md')
+        current = api(f'repos/{repo}/releases/{current["id"]}', method='PATCH', data=metadata)
     if not current or not current.get('draft') or not isinstance(current.get('id'), int):
         raise ValueError('Cannot locate the expected release draft')
     paths = [destination / name for name in release_assets(plan)]
@@ -196,7 +199,7 @@ def publish(plan, destination=Path('dist')):
         if asset['size'] != path.stat().st_size or asset.get('digest') != 'sha256:' + patcher.sha256(path):
             raise ValueError('Uploaded release checksum mismatch; draft remains unpublished')
     # Publishing is the final mutation. A failed upload can resume the same draft.
-    gh('release', 'edit', tag, '--repo', repo, '--draft=false')
+    api(f'repos/{repo}/releases/{current["id"]}', method='PATCH', data={'draft': False})
     print(f'Published https://github.com/{repo}/releases/tag/{tag}')
 
 

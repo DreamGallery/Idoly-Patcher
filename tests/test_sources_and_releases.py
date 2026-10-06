@@ -234,31 +234,35 @@ class PublicationTests(unittest.TestCase):
         with workspace(), patch.dict(os.environ, {'GITHUB_REPOSITORY': 'owner/patcher', 'GITHUB_SHA': '1' * 40}):
             plan = self.fixture()
             ci_release.bundle(plan)
-            with patch.object(ci_release, 'find_release', side_effect=[None, {'id': 42, 'draft': True}]), \
-                    patch.object(ci_release, 'api', return_value={'draft': True, 'assets': self.assets(plan)}) as api, \
+            with patch.object(ci_release, 'find_release', return_value=None), \
+                    patch.object(ci_release, 'api', side_effect=[{'id': 42, 'draft': True},
+                        {'draft': True, 'assets': self.assets(plan)}, {'draft': False}]) as api, \
                     patch.object(ci_release, 'gh') as gh:
                 ci_release.publish(plan)
-            self.assertIn('--draft', gh.call_args_list[0].args)
-            api.assert_called_once_with('repos/owner/patcher/releases/42')
-            self.assertEqual(gh.call_args_list[-1].args[-1], '--draft=false')
+            self.assertEqual(api.call_args_list[0].kwargs['method'], 'POST')
+            self.assertTrue(api.call_args_list[0].kwargs['data']['draft'])
+            self.assertEqual(api.call_args_list[1].args, ('repos/owner/patcher/releases/42',))
+            self.assertEqual(api.call_args_list[-1].kwargs, {'method': 'PATCH', 'data': {'draft': False}})
+            self.assertEqual(gh.call_args_list[0].args[:2], ('release', 'upload'))
 
     def test_failed_upload_and_bad_remote_hash_leave_draft_unpublished(self):
         with workspace(), patch.dict(os.environ, {'GITHUB_REPOSITORY': 'owner/patcher', 'GITHUB_SHA': '1' * 40}):
             plan = self.fixture()
             ci_release.bundle(plan)
-            with patch.object(ci_release, 'find_release', side_effect=[None, {'id': 42, 'draft': True}]), \
-                    patch.object(ci_release, 'gh', side_effect=['', ValueError('upload failed')]) as gh:
+            with patch.object(ci_release, 'find_release', return_value=None), \
+                    patch.object(ci_release, 'api', return_value={'id': 42, 'draft': True}) as api, \
+                    patch.object(ci_release, 'gh', side_effect=ValueError('upload failed')):
                 with self.assertRaisesRegex(ValueError, 'upload failed'):
                     ci_release.publish(plan)
-                self.assertFalse(any('--draft=false' in c.args for c in gh.call_args_list))
+                self.assertFalse(any(c.kwargs.get('data') == {'draft': False} for c in api.call_args_list))
             assets = self.assets(plan)
             assets[0]['digest'] = 'sha256:' + '0' * 64
             with patch.object(ci_release, 'find_release', return_value={'id': 42, 'draft': True}), \
-                    patch.object(ci_release, 'api', return_value={'draft': True, 'assets': assets}), \
+                    patch.object(ci_release, 'api', return_value={'id': 42, 'draft': True, 'assets': assets}) as api, \
                     patch.object(ci_release, 'gh') as gh:
                 with self.assertRaisesRegex(ValueError, 'checksum mismatch'):
                     ci_release.publish(plan)
-                self.assertFalse(any('--draft=false' in c.args for c in gh.call_args_list))
+                self.assertFalse(any(c.kwargs.get('data') == {'draft': False} for c in api.call_args_list))
 
     def test_published_release_is_never_overwritten(self):
         with workspace(), patch.dict(os.environ, {'GITHUB_REPOSITORY': 'owner/patcher'}):
