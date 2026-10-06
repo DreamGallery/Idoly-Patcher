@@ -29,7 +29,7 @@ Fork 或复制本仓库，打开 **Actions → Patch game APKs → Run workflow*
 
 ## 本地修补
 
-需要 Python 3.11+、JDK 17+、Android SDK Build Tools 35.0.0+。配置 `JAVA_HOME`、`ANDROID_HOME`，将 `adb` 加入 PATH。
+需要 Python 3.11+、JDK 21+、Android SDK Build Tools 35.0.0+。配置 `JAVA_HOME`、`ANDROID_HOME`，将 `adb` 加入 PATH。
 
 1. 将原版 APK 集合放入 `inputs/game/`，XAPK 可直接解压；也可从设备提取：
 

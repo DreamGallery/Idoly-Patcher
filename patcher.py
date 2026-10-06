@@ -54,8 +54,17 @@ def java_tool(name):
         return str(path)
     found = shutil.which(name)
     if not found:
-        raise ValueError(f'Missing {name}; install JDK 17+ and set JAVA_HOME')
+        raise ValueError(f'Missing {name}; install JDK 21+ and set JAVA_HOME')
     return found
+
+
+def lspatch_java():
+    java = java_tool('java')
+    version = command(java, '--version')
+    major = re.search(r'(?:openjdk|java)\s+(?:version\s+)?"?(\d+)', version)
+    if not major or int(major.group(1)) < 21:
+        raise ValueError('The pinned LSPatch requires JDK 21+; update JAVA_HOME')
+    return java
 
 
 def sdk_tool(name):
@@ -360,6 +369,7 @@ def stage_game_apks(apks, destination):
 
 
 def patch(args):
+    java = lspatch_java()
     passwords()
     apks = sorted(args.game_dir.resolve().glob('*.apk'))
     base, game_info, original_certs = validate_game(apks, args.allow_untested_version)
@@ -399,7 +409,7 @@ def patch(args):
         patched = work / 'patched'
         patched.mkdir()
         canonical_apks = stage_game_apks(apks, work / 'game')
-        command(java_tool('java'), '-Xmx4g', '-jar', lspatch, '-l', '2', '-m', module,
+        command(java, '-Xmx4g', '-jar', lspatch, '-l', '2', '-m', module,
                 '-o', patched, *canonical_apks)
         outputs = list(patched.glob('*.apk'))
         if len(outputs) != len(apks):

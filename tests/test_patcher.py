@@ -10,6 +10,19 @@ import patcher
 
 
 class PatcherTests(unittest.TestCase):
+    def test_lspatch_java_rejects_old_runtime_before_patching(self):
+        for version, supported in (('openjdk 17.0.20 2026-07-21', False),
+                                   ('openjdk 21.0.9 2025-10-21 LTS', True),
+                                   ('java 25 2025-09-16', True)):
+            with self.subTest(version=version), \
+                    patch.object(patcher, 'java_tool', return_value='/jdk/bin/java'), \
+                    patch.object(patcher, 'command', return_value=version):
+                if supported:
+                    self.assertEqual(patcher.lspatch_java(), '/jdk/bin/java')
+                else:
+                    with self.assertRaisesRegex(ValueError, 'JDK 21'):
+                        patcher.lspatch_java()
+
     def test_plugin_release_skips_text_only_latest_and_prerelease(self):
         asset = {'name': 'idoly-localify-0.2.1.apk', 'digest': 'sha256:' + 'a' * 64,
                  'browser_download_url': 'https://github.com/' + patcher.RELEASES + '/releases/download/v0.2.1/idoly-localify-0.2.1.apk'}
