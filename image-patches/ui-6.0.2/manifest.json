@@ -1,109 +1,12 @@
 {
   "schema_version": 2,
   "game_version": "6.0.2",
-  "source_manifest_sha256": "d664a2ea5519ef891d71de993d115b42dafc027a0bd8af6c89694d8ba1a8eba0",
+  "source_manifest_sha256": "11a6ab7fcdeb5246cde84e5a70d787b0526421bd1a3b9a8dc75576299f8a7b34",
   "assets": [
     {
       "entry": "assets/bin/Data/00000000000000000000000000000000",
       "source_sha256": "48e61ed38e098d5b9464b6d21a06879a01c39259d584e0ea11c36ae632ccc913",
       "textures": [
-        {
-          "path_id": 19,
-          "name": "sactx-0-1024x2048-ASTC 6x6-HomeAtlas-bd012772",
-          "rgba_sha256": "80c611cd3428b9d4a07d88f9518eee7e16824d5aafd8acfd58ee8a2c8bb36a4c",
-          "regions": [
-            {
-              "box": [
-                273,
-                679,
-                411,
-                720
-              ],
-              "png": "texture-19-00.png",
-              "png_sha256": "089959f4fa7a2c8910467b823db78e5662fb40c63edb3c599723cf1e006c7d78"
-            },
-            {
-              "box": [
-                731,
-                550,
-                835,
-                591
-              ],
-              "png": "texture-19-01.png",
-              "png_sha256": "93d072bd9bd9212871417bfc8c270e2475f2b1e22e8b4bb9696afc2e20947333"
-            },
-            {
-              "box": [
-                694,
-                1387,
-                804,
-                1427
-              ],
-              "png": "texture-19-02.png",
-              "png_sha256": "87d77c8258aa74aa6d4d0d0ad344d0217e106b2d9de6b92eea3312ebf8cee1a2"
-            },
-            {
-              "box": [
-                411,
-                679,
-                549,
-                720
-              ],
-              "png": "texture-19-03.png",
-              "png_sha256": "d81f8508d3cb87c4650d96d5743c40c415323e422a2473be3f34e8d749acb03f"
-            },
-            {
-              "box": [
-                415,
-                802,
-                577,
-                842
-              ],
-              "png": "texture-19-04.png",
-              "png_sha256": "39f22eb1cff7e2824211731908ec25cdcb56e13f949313458cde459b112ef08f"
-            },
-            {
-              "box": [
-                130,
-                108,
-                263,
-                148
-              ],
-              "png": "texture-19-05.png",
-              "png_sha256": "e25d42ea71276e165944073898940fa3fad4f50846ff1bfcb85d542ead096735"
-            },
-            {
-              "box": [
-                791,
-                1802,
-                895,
-                1842
-              ],
-              "png": "texture-19-06.png",
-              "png_sha256": "4314f4ce8434c6936ce02e1ee7029f5f13d0c68852e54d7c9bac68a5cf0f1795"
-            },
-            {
-              "box": [
-                676,
-                1802,
-                791,
-                1842
-              ],
-              "png": "texture-19-07.png",
-              "png_sha256": "de3766d3f0d4f856f21570bb2825088f6c503ab655c1989152808501bd97426b"
-            },
-            {
-              "box": [
-                378,
-                564,
-                515,
-                604
-              ],
-              "png": "texture-19-08.png",
-              "png_sha256": "4be41c7dc27755c9a226406e41beb1a7a0a081a9cc09af836cb002a1a5d37c62"
-            }
-          ]
-        },
         {
           "path_id": 24,
           "name": "sactx-0-1024x2048-ASTC 6x6-GachaAtlas-dafc3479",
@@ -132,9 +35,26 @@
           ]
         },
         {
+          "path_id": 3,
+          "name": "sactx-0-1024x2048-ASTC 6x6-PhotoAtlas-206d6b0b",
+          "rgba_sha256": "144d446a9cef24a9a09bc95246faf7d658f09c1d5ebc44e00880a87a905b2d40",
+          "regions": [
+            {
+              "box": [
+                462,
+                1091,
+                566,
+                1132
+              ],
+              "png": "texture-3-00.png",
+              "png_sha256": "59c7cf17a1856ce1972428f6d69b320a4c02e19056c7bbf1c1c494dbcea02ee1"
+            }
+          ]
+        },
+        {
           "path_id": 30,
           "name": "sactx-1-2048x2048-ASTC 6x6-CommonAtlas-06d6728f",
-          "rgba_sha256": "ddc741b9de96b4b9895bf389135582dec3b241683460a44400d3cbf95ab73b4a",
+          "rgba_sha256": "e991b409ec333aa797d0589b16f94d44d725643aac91c345b1e7efdd6822d118",
           "regions": [
             {
               "box": [
@@ -155,13 +75,23 @@
               ],
               "png": "texture-30-01.png",
               "png_sha256": "c0156be0c5cb09dc45d4bde0c2be0b3543fd591791e2f1cf886f9f7e32aa439d"
+            },
+            {
+              "box": [
+                1254,
+                806,
+                1383,
+                849
+              ],
+              "png": "texture-30-02.png",
+              "png_sha256": "c561297bd80a54210e83879028043874d92a9439daed4b39605a439aac00e863"
             }
           ]
         },
         {
           "path_id": 5,
           "name": "sactx-0-2048x2048-ASTC 6x6-LoveAtlas-3307927b",
-          "rgba_sha256": "517b7efa9aad6197d65d7737dc107da239029195bf3ae06aa4c6e4de7183c7fc",
+          "rgba_sha256": "9accbef518bd601e4ccddf34cfe4b8df03c96dd00a06b1643e2b0b1c3fed8055",
           "regions": [
             {
               "box": [
@@ -262,13 +192,23 @@
               ],
               "png": "texture-5-09.png",
               "png_sha256": "c192ad9d2719bdbee43f10dc9395926909b37556872fd548fef89009b58d12e9"
+            },
+            {
+              "box": [
+                655,
+                467,
+                939,
+                511
+              ],
+              "png": "texture-5-10.png",
+              "png_sha256": "3799d36eb8fe1da6b9c9f3e2dac1c94c7a91d6b96f5d0dd896e443e18d209da2"
             }
           ]
         },
         {
           "path_id": 17,
           "name": "sactx-0-1024x2048-ASTC 6x6-LoveADVAtlas-9df05f4f",
-          "rgba_sha256": "1cbce55a773b604e1fdc3cf8e16dc0277d7c52c1fd6d554b7c60a7b962c0b53b",
+          "rgba_sha256": "99137ef7ade2f57e3f4a0f223161fbf726e85d6d2fb7eb369d7c445718491c14",
           "regions": [
             {
               "box": [
@@ -299,6 +239,143 @@
               ],
               "png": "texture-17-02.png",
               "png_sha256": "6c66f551084aeff038e80b5e0b25fbe729336f2b01b5fe2e30d2487b1973825b"
+            },
+            {
+              "box": [
+                673,
+                1667,
+                805,
+                1703
+              ],
+              "png": "texture-17-03.png",
+              "png_sha256": "19b7a02ed54609b01ee8dbb7c1b48841490cbf4dc14eba0c6ce7c5a2d1496394"
+            }
+          ]
+        },
+        {
+          "path_id": 19,
+          "name": "sactx-0-1024x2048-ASTC 6x6-HomeAtlas-bd012772",
+          "rgba_sha256": "16ae2d9bd768de8baefd095ab8b9dab42b06207b15d5d7b7e312cc83ff5d9a72",
+          "regions": [
+            {
+              "box": [
+                273,
+                679,
+                411,
+                720
+              ],
+              "png": "texture-19-00.png",
+              "png_sha256": "089959f4fa7a2c8910467b823db78e5662fb40c63edb3c599723cf1e006c7d78"
+            },
+            {
+              "box": [
+                731,
+                550,
+                835,
+                591
+              ],
+              "png": "texture-19-01.png",
+              "png_sha256": "93d072bd9bd9212871417bfc8c270e2475f2b1e22e8b4bb9696afc2e20947333"
+            },
+            {
+              "box": [
+                694,
+                1387,
+                804,
+                1427
+              ],
+              "png": "texture-19-02.png",
+              "png_sha256": "87d77c8258aa74aa6d4d0d0ad344d0217e106b2d9de6b92eea3312ebf8cee1a2"
+            },
+            {
+              "box": [
+                411,
+                679,
+                549,
+                720
+              ],
+              "png": "texture-19-03.png",
+              "png_sha256": "d81f8508d3cb87c4650d96d5743c40c415323e422a2473be3f34e8d749acb03f"
+            },
+            {
+              "box": [
+                415,
+                802,
+                577,
+                842
+              ],
+              "png": "texture-19-04.png",
+              "png_sha256": "39f22eb1cff7e2824211731908ec25cdcb56e13f949313458cde459b112ef08f"
+            },
+            {
+              "box": [
+                130,
+                108,
+                263,
+                148
+              ],
+              "png": "texture-19-05.png",
+              "png_sha256": "e25d42ea71276e165944073898940fa3fad4f50846ff1bfcb85d542ead096735"
+            },
+            {
+              "box": [
+                791,
+                1802,
+                895,
+                1842
+              ],
+              "png": "texture-19-06.png",
+              "png_sha256": "4314f4ce8434c6936ce02e1ee7029f5f13d0c68852e54d7c9bac68a5cf0f1795"
+            },
+            {
+              "box": [
+                676,
+                1802,
+                791,
+                1842
+              ],
+              "png": "texture-19-07.png",
+              "png_sha256": "de3766d3f0d4f856f21570bb2825088f6c503ab655c1989152808501bd97426b"
+            },
+            {
+              "box": [
+                378,
+                564,
+                515,
+                604
+              ],
+              "png": "texture-19-08.png",
+              "png_sha256": "4be41c7dc27755c9a226406e41beb1a7a0a081a9cc09af836cb002a1a5d37c62"
+            },
+            {
+              "box": [
+                549,
+                591,
+                753,
+                659
+              ],
+              "png": "texture-19-09.png",
+              "png_sha256": "04038f6930b629e56b041dbf3de7567ca4a6a36417b817107c4b6c3bda9de944"
+            },
+            {
+              "box": [
+                549,
+                659,
+                753,
+                727
+              ],
+              "png": "texture-19-10.png",
+              "png_sha256": "b82a6ef3d93784bc22e63b2b56ec54eff46bddfee6a648c18f78e5318a7d09af"
+            },
+            {
+              "box": [
+                577,
+                774,
+                781,
+                842
+              ],
+              "png": "texture-19-11.png",
+              "png_sha256": "ee995c8c804c0c6374a18a3323837fafcae05b335a5f84669b17a87b5a8a2be7"
             }
           ]
         }

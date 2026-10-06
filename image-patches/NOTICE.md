@@ -1,12 +1,8 @@
 # UI 图片包
 
-`ui-6.0.2` 来自 DreamGallery/Idoly-localify 的已审核精准像素修改素材：2026-10-01 最终边缘清理合并清单（源清单 SHA-256 记录于 manifest）。对应工具源码版本 `aa795011ff0399ced3eff0d0607d97db8ef86274`；上游为私有仓库，本仓库自带执行所需代码与区域 PNG，无需访问上游或固定本机路径。
-
-包含 HomeAtlas 的 9 个首页按钮、GachaAtlas 的 2 个扭蛋按钮、CommonAtlas 的横竖“已选择”，以及 LoveAtlas 和 LoveADVAtlas 的若恋按钮、若恋标题与剧情控制标签。共 5 张纹理、26 个审核区域，包括 2 像素边缘采样留白。“第 N 话进行中”由 Idoly-localify 插件运行时处理；本包不修改该动态提示，建议使用最新正式插件。
+包含游戏 **6.0.2** 版本 HomeAtlas 的 9 个首页按钮、GachaAtlas 的 2 个扭蛋按钮、PhotoAtlas 的 360°LIVE“设置”按钮、CommonAtlas 的横竖“已选择”及“期间限定”，以及 LoveAtlas 和 LoveADVAtlas 的若恋按钮（含结局达成情况）、若恋标题、剧情控制标签与选项“已选择”标记。还包含工作页的“核心粉丝率提升中”“粉丝获取中”“体力恢复中”状态标签。共 6 张纹理、33 个审核区域，包括 2 像素边缘采样留白。
 
 这里只分发需要替换的区域 PNG，不分发完整图集、游戏 APK 或缓存。区域来自《IDOLY PRIDE／偶像荣耀》游戏美术的本地化修改，原游戏美术与商标权利归各自权利人；GPL 不代表对原游戏美术授予许可。中文字形由 Resource Han Rounded SC Bold 渲染，字体项目采用 SIL Open Font License 1.1，本仓库不分发字体文件。来源：https://github.com/CyanoHao/Resource-Han-Rounded 。
-
-`patch_images.py` 及相关区域校验测试改编自 DreamGallery/Idoly-localify 的同名工具，保留 GPL-3.0，全文见仓库根目录 LICENSE。导出工具与打包集成采用同一代码许可证。
 
 ## 更新素材
 

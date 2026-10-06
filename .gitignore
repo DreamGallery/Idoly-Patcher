@@ -1,6 +1,7 @@
 # Local game files, downloaded dependencies and build outputs
 /inputs/
 /output/
+/dist/
 /cache/
 /.analysis/
 /secrets/

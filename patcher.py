@@ -41,7 +41,8 @@ def command(*args):
     result = subprocess.run(list(map(str, args)), capture_output=True, text=True)
     if result.returncode:
         # Never echo commands: callers may provide private local filenames.
-        raise ValueError(f'{Path(args[0]).name} failed:\n{result.stderr[-4000:]}\n{result.stdout[-4000:]}')
+        raise ValueError(f'{Path(args[0]).name} failed (exit {result.returncode}):\n'
+                         f'{result.stderr[-4000:]}\n{result.stdout[-4000:]}')
     return result.stdout
 
 
@@ -137,13 +138,15 @@ def plugin_asset(releases):
     raise ValueError('No stable plugin APK release found')
 
 
-def get_module(cache, tag=None):
+def find_module_release(tag=None, loader=None):
+    """Resolve once so the detector and builder use the same immutable APK digest."""
+    loader = loader or github_json
     if tag:
-        releases = [github_json('releases/tags/' + urllib.parse.quote(tag, safe=''))]
+        releases = [loader('releases/tags/' + urllib.parse.quote(tag, safe=''))]
         asset, digest = plugin_asset(releases)
     else:
         for page in range(1, 11):
-            releases = github_json(f'releases?per_page=100&page={page}')
+            releases = loader(f'releases?per_page=100&page={page}')
             try:
                 asset, digest = plugin_asset(releases)
                 break
@@ -152,6 +155,14 @@ def get_module(cache, tag=None):
                     raise
         else:
             raise ValueError('Set --module-tag explicitly; no plugin found in recent releases')
+    release = next(r for r in releases if asset in r.get('assets', []))
+    if not re.fullmatch(r'v?[0-9][A-Za-z0-9._-]*', release.get('tag_name', '')):
+        raise ValueError('Invalid plugin release tag')
+    return release, asset, digest
+
+
+def get_module(cache, tag=None):
+    _, asset, digest = find_module_release(tag)
     path = cache / digest / asset['name']
     if not path.is_file() or sha256(path) != digest:
         download(asset['browser_download_url'], path, digest)
@@ -195,6 +206,8 @@ def validate_game(apks, allow_untested=False):
         if metadata['name'] != GAME or metadata['versionCode'] != info['versionCode']:
             raise ValueError('All APKs must belong to the same IDOLY PRIDE version')
         split = metadata.get('split', '')
+        if split and not re.fullmatch(r'[A-Za-z0-9_.-]+', split):
+            raise ValueError('Invalid original split ID')
         if split in splits:
             raise ValueError('Duplicate base/split APK')
         splits.add(split)
@@ -329,10 +342,31 @@ def check_images(base, manifest):
     print('Verified source compatibility, reviewed pixels and unchanged unrelated assets')
 
 
+def stage_game_apks(apks, destination):
+    """LSPatch recognizes split_ filenames; XAPK names are not authoritative."""
+    destination.mkdir()
+    staged = []
+    for apk in apks:
+        split = package(apk).get('split', '')
+        if split and not re.fullmatch(r'[A-Za-z0-9_.-]+', split):
+            raise ValueError('Invalid original split ID')
+        name = 'split_' + split + '.apk' if split else 'base.apk'
+        target = destination / name
+        if target.exists():
+            raise ValueError('Duplicate original APK identity')
+        shutil.copyfile(apk, target)
+        staged.append(target)
+    return sorted(staged)
+
+
 def patch(args):
     passwords()
     apks = sorted(args.game_dir.resolve().glob('*.apk'))
     base, game_info, original_certs = validate_game(apks, args.allow_untested_version)
+    source_verification = None
+    if args.game_reference:
+        from game_source import verify_reference
+        source_verification = verify_reference(apks, args.game_reference, args.game_check)
     if not args.keystore.is_file():
         raise ValueError('Keystore not found; run init-key once')
     if args.output.exists() and any(args.output.iterdir()):
@@ -364,8 +398,9 @@ def patch(args):
             images.verify_apk(embedded_base, image_manifest)
         patched = work / 'patched'
         patched.mkdir()
+        canonical_apks = stage_game_apks(apks, work / 'game')
         command(java_tool('java'), '-Xmx4g', '-jar', lspatch, '-l', '2', '-m', module,
-                '-o', patched, *apks)
+                '-o', patched, *canonical_apks)
         outputs = list(patched.glob('*.apk'))
         if len(outputs) != len(apks):
             raise ValueError('LSPatch output APK count does not match input')
@@ -425,6 +460,7 @@ def patch(args):
         report = {'schema_version': 1, 'game_version': game_info.get('versionName'),
                   'game_version_code': game_info['versionCode'],
                   'module_version': module_info.get('versionName'), 'module_sha256': sha256(module),
+                  'game_source_verification': source_verification,
                   'lspatch_sha256': LSPATCH_SHA256, 'original_certificates': sorted(original_certs),
                   'output_certificates': sorted(output_certs),
                   'ui_images': {'enabled': bool(image_manifest),
@@ -447,6 +483,8 @@ def extract_apks(archive_path, destination):
     if destination.exists() and any(destination.iterdir()):
         raise ValueError('Game input directory must be empty')
     with ZipFile(archive_path) as archive:
+        if any(m.filename.lower().endswith('.obb') for m in archive.infolist()):
+            raise ValueError('OBB expansion archives are not supported; provide the IDOLY PRIDE APK split set')
         members = [m for m in archive.infolist() if m.filename.endswith('.apk')]
         if not members or len(members) > 100 or sum(m.file_size for m in members) > LIMIT:
             raise ValueError('Invalid or oversized APK archive')
@@ -501,6 +539,9 @@ def main():
     build.add_argument('--cache', type=Path, default=Path('cache'))
     build.add_argument('--output', type=Path, default=Path('output'))
     build.add_argument('--allow-untested-version', action='store_true')
+    build.add_argument('--game-reference', type=Path, help='Trusted original reference from game_source.py')
+    build.add_argument('--game-check', choices=('signature', 'exact'), default='signature',
+                       help='Verify original signer or also require identical version and APK split bytes')
     images = build.add_mutually_exclusive_group()
     images.add_argument('--no-ui-images', action='store_true', help='Keep original game UI images')
     images.add_argument('--image-manifest', type=Path, default=DEFAULT_IMAGES,

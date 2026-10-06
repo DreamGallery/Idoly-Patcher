@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "package": "game.qualiarts.idolypride",
+  "version_name": "6.0.2",
+  "version_code": "405",
+  "certificates_sha256": [
+    "06cede031cd36c1986928fb5a9339c859253c07e06aff6137503d8385d3291b5"
+  ],
+  "splits_sha256": {
+    "base": "f072569d47646a0e601166d96aa0e3c7fb73e24b769057d2f32d96a77495b652",
+    "config.arm64_v8a": "732443a10d340cb55724a4592a523cdd613a321297cc296c594d69563fce549a"
+  },
+  "source": {
+    "kind": "google-play-device",
+    "installer": "com.android.vending",
+    "recorded_at": "2026-10-05T20:25:07.831417+00:00"
+  }
+}

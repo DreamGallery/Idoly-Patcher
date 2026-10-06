@@ -2,30 +2,53 @@ name: Patch game APKs
 on:
   workflow_dispatch:
     inputs:
+      game_version:
+        description: 游戏版本（留空使用仓库 GAME_VERSION，默认 6.0.2）
+        type: string
+        required: false
       module_tag:
-        description: 插件发布版本（留空自动选最新正式插件，如 v0.2.4）
+        description: 插件发布版本（留空检测最新正式插件，如 v0.3.0）
         type: string
         required: false
       ui_images:
-        description: 应用已审核的首页、扭蛋和若恋 UI 汉化图片（仅兼容匹配的原版资源）
+        description: 应用首页、扭蛋、若恋和工作等 UI 汉化图片（仅兼容匹配的原版资源）
         type: boolean
         default: true
       allow_untested_version:
         description: 允许修补尚未验证兼容性的游戏版本
         type: boolean
         default: false
+      game_check:
+        description: 原包校验（signature 可跨游戏版本；exact 要求与基准文件完全一致）
+        type: choice
+        options:
+          - signature
+          - exact
+        default: signature
+      publish:
+        description: 校验成功后发布修补包到本仓库 Release
+        type: boolean
+        default: true
+      automatic:
+        description: 发布联动调用（使用仓库 Variables 中的构建设置）
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
-  group: patch-${{ github.ref }}
+  group: patch-release
   cancel-in-progress: false
 jobs:
   patch:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
+    permissions:
+      contents: write
     env:
-      IDOLY_KS_PASS: ${{ secrets.PATCH_KEYSTORE_PASSWORD }}
-      IDOLY_KEY_PASS: ${{ secrets.PATCH_KEY_PASSWORD }}
+      GAME_VERSION: ${{ inputs.game_version || vars.GAME_VERSION || '6.0.2' }}
+      UI_IMAGES: ${{ !inputs.automatic && format('{0}', inputs.ui_images) || vars.UI_IMAGES || 'true' }}
+      GAME_CHECK: ${{ !inputs.automatic && inputs.game_check || vars.GAME_CHECK || 'signature' }}
+      ALLOW_UNTESTED: ${{ !inputs.automatic && format('{0}', inputs.allow_untested_version) || vars.ALLOW_UNTESTED_VERSION || 'false' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,41 +56,62 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Detect plugin release
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MODULE_TAG: ${{ inputs.module_tag }}
+        run: python ci_release.py plan
       - uses: actions/setup-java@v4
+        if: steps.plan.outputs.build_needed == 'true'
         with:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        if: steps.plan.outputs.build_needed == 'true'
       - name: Install Android build tools
+        if: steps.plan.outputs.build_needed == 'true'
         run: sdkmanager 'build-tools;35.0.0' 'platform-tools'
       - name: Install image patch dependencies
+        if: steps.plan.outputs.build_needed == 'true'
         run: python -m pip install -r requirements-images.txt
       - name: Test packager
+        if: steps.plan.outputs.build_needed == 'true'
         run: python -m unittest discover -s tests -v
       - name: Prepare private inputs
+        if: steps.plan.outputs.build_needed == 'true'
         env:
           GAME_APKS_URL: ${{ secrets.GAME_APKS_URL }}
           PATCH_KEYSTORE_BASE64: ${{ secrets.PATCH_KEYSTORE_BASE64 }}
+          IDOLY_KS_PASS: ${{ secrets.PATCH_KEYSTORE_PASSWORD }}
         run: python ci_prepare.py
       - name: Patch and verify
+        if: steps.plan.outputs.build_needed == 'true'
         env:
-          UI_IMAGES: ${{ inputs.ui_images }}
-          MODULE_TAG: ${{ inputs.module_tag }}
-          ALLOW_UNTESTED: ${{ inputs.allow_untested_version }}
           KEY_ALIAS: ${{ vars.PATCH_KEY_ALIAS || 'idoly-patcher' }}
+          IDOLY_KS_PASS: ${{ secrets.PATCH_KEYSTORE_PASSWORD }}
+          IDOLY_KEY_PASS: ${{ secrets.PATCH_KEY_PASSWORD }}
         run: |
-          options=(--key-alias "$KEY_ALIAS")
+          options=(--key-alias "$KEY_ALIAS" --module cache/module.apk --game-reference game-reference.json --game-check "$GAME_CHECK")
           if [[ "$UI_IMAGES" != 'true' ]]; then options+=(--no-ui-images); fi
-          if [[ -n "$MODULE_TAG" ]]; then options+=(--module-tag "$MODULE_TAG"); fi
           if [[ "$ALLOW_UNTESTED" == 'true' ]]; then options+=(--allow-untested-version); fi
           python patcher.py patch "${options[@]}"
+      - name: Bundle verified release
+        if: steps.plan.outputs.build_needed == 'true'
+        run: python ci_release.py bundle
       - name: Downloadable APK set
+        if: steps.plan.outputs.build_needed == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: idoly-patched-${{ github.run_number }}
-          path: output/
+          path: dist/
           if-no-files-found: error
           retention-days: 1
+      - name: Publish patched APK set
+        if: steps.plan.outputs.build_needed == 'true' && inputs.publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python ci_release.py publish
       - name: Remove private inputs
         if: always()
-        run: rm -rf secrets inputs cache output
+        run: rm -rf secrets inputs cache output dist
