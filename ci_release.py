@@ -84,10 +84,10 @@ def release_assets(plan):
 def build_plan(tag, game_version, game_check, allow_untested):
     load_reference(REFERENCE)
     if not re.fullmatch(r'\d+(?:\.\d+)+', game_version):
-        raise ValueError('GAME_VERSION must be an explicit version such as 6.0.2')
+        raise ValueError('GAME_VERSION must be an explicit version such as 6.0.3')
     if game_check not in ('signature', 'exact'):
         raise ValueError('GAME_CHECK must be signature or exact')
-    if game_version != patcher.TESTED_VERSION and not allow_untested:
+    if game_version not in patcher.COMPATIBLE_VERSIONS and not allow_untested:
         raise ValueError('New game versions require explicit allow_untested_version approval')
     release, asset, digest = patcher.find_module_release(
         tag, loader=lambda endpoint: api(f'repos/{patcher.RELEASES}/{endpoint}'))

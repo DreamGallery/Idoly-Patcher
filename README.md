@@ -2,7 +2,7 @@
 
 将《IDOLY PRIDE／偶像荣耀》日服原版 APK 与 [Idoly-localify](https://github.com/DreamGallery/Idoly-localify-translations) 插件封装为无需 Root 的安装包，支持本地修补和 GitHub Actions 发布。
 
-字体与 UI 汉化图片由插件在运行时提供。Patcher 保留游戏原始资源，只负责嵌入插件、签名和校验。适配游戏版本为 **6.0.2**；其他版本需确认插件兼容性，x86 模拟器需支持 ARM64 转译。
+字体与 UI 汉化图片由插件在运行时提供。Patcher 保留游戏原始资源，只负责嵌入插件、签名和校验。适配游戏版本为 **6.0.2／6.0.3**；其他版本需确认插件兼容性，x86 模拟器需支持 ARM64 转译。
 
 ## GitHub Actions
 

@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       game_version:
-        description: 游戏版本（留空使用仓库 GAME_VERSION，默认 6.0.2）
+        description: 游戏版本（留空使用仓库 GAME_VERSION，默认 6.0.3）
         type: string
         required: false
       module_tag:
@@ -41,7 +41,7 @@ jobs:
     permissions:
       contents: write
     env:
-      GAME_VERSION: ${{ inputs.game_version || vars.GAME_VERSION || '6.0.2' }}
+      GAME_VERSION: ${{ inputs.game_version || vars.GAME_VERSION || '6.0.3' }}
       GAME_CHECK: ${{ !inputs.automatic && inputs.game_check || vars.GAME_CHECK || 'signature' }}
       ALLOW_UNTESTED: ${{ !inputs.automatic && format('{0}', inputs.allow_untested_version) || vars.ALLOW_UNTESTED_VERSION || 'false' }}
     steps:

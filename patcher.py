@@ -23,7 +23,8 @@ if sys.version_info < (3, 11):
 GAME = 'game.qualiarts.idolypride'
 MODULE = 'io.github.dreamgallery.idoly.localify'
 RELEASES = 'DreamGallery/Idoly-localify-translations'
-TESTED_VERSION = '6.0.2'
+TESTED_VERSION = '6.0.3'
+COMPATIBLE_VERSIONS = {'6.0.2', '6.0.3'}
 LSPATCH_URL = 'https://github.com/JingMatrix/LSPatch/releases/download/v1.2/lspatch-v1.2-487-release.jar'
 LSPATCH_SHA256 = 'd238fdc414d121b7fa454d8b4ccf420df3a8c97d563761861ff92bd9c5da2165'
 LIMIT = 2 * 1024**3
@@ -203,7 +204,7 @@ def validate_game(apks, allow_untested=False):
     if len(bases) != 1:
         raise ValueError('Provide exactly one base APK and its splits')
     base, info = bases[0]
-    if info.get('versionName') != TESTED_VERSION and not allow_untested:
+    if info.get('versionName') not in COMPATIBLE_VERSIONS and not allow_untested:
         raise ValueError(f'Game {info.get("versionName")} is untested; use --allow-untested-version after checking compatibility')
     certificate = certificates(base)
     splits = set()

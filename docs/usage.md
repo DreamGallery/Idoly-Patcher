@@ -6,7 +6,7 @@
 
 | Patcher 仓库 Variable | 默认值／作用 |
 | --- | --- |
-| `GAME_VERSION` | `6.0.2`，要求原包为此版本 |
+| `GAME_VERSION` | `6.0.3`，要求原包为此版本 |
 | `GAME_CHECK` | `signature`；可改为 `exact` |
 | `ALLOW_UNTESTED_VERSION` | `false`；尝试其他游戏版本时显式设为 `true` |
 | `PATCH_KEY_ALIAS` | `idoly-patcher`，签名密钥别名 |
