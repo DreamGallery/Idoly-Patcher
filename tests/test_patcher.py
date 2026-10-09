@@ -109,7 +109,7 @@ class PatcherTests(unittest.TestCase):
             with patch.dict('os.environ', {'ANDROID_HOME': directory}), patch.object(patcher.os, 'name', 'posix'):
                 self.assertIn('35.0.0', patcher.sdk_tool('aapt'))
 
-class ImageWrapperTests(unittest.TestCase):
+class AlignmentTests(unittest.TestCase):
     def test_real_zipalign_survives_embedding_and_preserves_payloads(self):
         try:
             patcher.sdk_tool('zipalign')
@@ -135,29 +135,23 @@ class ImageWrapperTests(unittest.TestCase):
                     offset = entry.header_offset + 30 + name_length + extra_length
                     self.assertEqual(offset % alignment, 0)
 
-    def test_updates_both_resource_copies_and_preserves_signature_config(self):
+    def test_game_assets_must_remain_original(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            original, modified, wrapper, result = [root / n for n in ('original.apk', 'modified.apk', 'wrapper.apk', 'result.apk')]
-            entry = 'assets/bin/Data/atlas'
-            for path, pixels in ((original, b'original'), (modified, b'translated')):
-                with ZipFile(path, 'w') as apk:
-                    apk.writestr(entry, pixels)
-                    apk.writestr('other', b'unchanged')
-            with ZipFile(wrapper, 'w') as apk:
-                apk.writestr(entry, b'original')
-                apk.writestr('assets/lspatch/origin.apk', original.read_bytes())
-                apk.writestr('assets/lspatch/config.json', b'original signing certificate')
-                apk.writestr('classes.dex', b'loader')
-            patcher.patch_wrapper(wrapper, result, original, modified, {'assets': [{'entry': entry}]})
-            with ZipFile(result) as apk:
-                self.assertEqual(apk.read(entry), b'translated')
-                self.assertEqual(apk.read('assets/lspatch/origin.apk'), modified.read_bytes())
-                self.assertEqual(apk.read('assets/lspatch/config.json'), b'original signing certificate')
-                self.assertEqual(apk.read('classes.dex'), b'loader')
-            with self.assertRaisesRegex(ValueError, 'origin differs'):
-                patcher.patch_wrapper(result, root / 'repeat.apk', original, modified, {'assets': [{'entry': entry}]})
-            self.assertFalse((root / 'repeat.apk').exists())
+            original, output = root / 'original.apk', root / 'output.apk'
+            with ZipFile(original, 'w') as apk:
+                apk.writestr('assets/bin/Data/atlas', b'original pixels')
+                apk.writestr('assets/font', b'original font')
+            for pixels in (b'original pixels', b'baked translation'):
+                with ZipFile(output, 'w') as apk:
+                    apk.writestr('assets/bin/Data/atlas', pixels)
+                    apk.writestr('assets/font', b'original font')
+                    apk.writestr('assets/lspatch/modules/plugin.apk', b'module images')
+                if pixels == b'original pixels':
+                    patcher.verify_game_resources(output, original)
+                else:
+                    with self.assertRaisesRegex(ValueError, 'resource was changed'):
+                        patcher.verify_game_resources(output, original)
 
 
 if __name__ == '__main__':

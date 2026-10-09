@@ -70,10 +70,7 @@ def boolean(value):
 
 
 def recipe_hash():
-    files = [Path(p) for p in ('patcher.py', 'game_source.py', 'ci_prepare.py', 'ci_release.py',
-                               'patch_images.py', 'requirements-images.txt')]
-    files += sorted(Path('image-patches').rglob('*.json'))
-    files += sorted(Path('image-patches').rglob('*.png'))
+    files = [Path(p) for p in ('patcher.py', 'game_source.py', 'ci_prepare.py', 'ci_release.py')]
     digest = hashlib.sha256()
     for path in files:
         digest.update(path.as_posix().encode() + b'\0' + bytes.fromhex(patcher.sha256(path)))
@@ -84,7 +81,7 @@ def release_assets(plan):
     return [plan['release_tag'] + '.zip', 'report.json', 'SHA256SUMS']
 
 
-def build_plan(tag, game_version, ui_images, game_check, allow_untested):
+def build_plan(tag, game_version, game_check, allow_untested):
     load_reference(REFERENCE)
     if not re.fullmatch(r'\d+(?:\.\d+)+', game_version):
         raise ValueError('GAME_VERSION must be an explicit version such as 6.0.2')
@@ -96,7 +93,7 @@ def build_plan(tag, game_version, ui_images, game_check, allow_untested):
         tag, loader=lambda endpoint: api(f'repos/{patcher.RELEASES}/{endpoint}'))
     plan = {'schema_version': 1, 'repository': repository(), 'game_version': game_version,
             'module_tag': release['tag_name'], 'module_sha256': digest,
-            'module_url': asset['browser_download_url'], 'ui_images': ui_images,
+            'module_url': asset['browser_download_url'],
             'game_check': game_check, 'allow_untested_version': allow_untested,
             'reference_sha256': patcher.sha256(REFERENCE), 'recipe_sha256': recipe_hash()}
     key = hashlib.sha256(json.dumps(plan, sort_keys=True).encode()).hexdigest()[:12]
@@ -134,8 +131,8 @@ def bundle(plan, output=Path('output'), destination=Path('dist')):
             or check.get('mode') != plan['game_check']
             or (plan['game_check'] == 'exact' and not check.get('all_split_bytes_match'))):
         raise ValueError('Build did not pass the required game source verification')
-    if report['ui_images']['enabled'] != plan['ui_images']:
-        raise ValueError('Image patch setting differs from the release plan')
+    if report.get('game_resources_unchanged') is not True:
+        raise ValueError('Original game resource preservation was not verified')
     expected = report['output_apks']
     if not expected or 'base.apk' not in expected or set(expected) != {p.name for p in output.glob('*.apk')}:
         raise ValueError('Incomplete output APK set')
@@ -158,7 +155,7 @@ def bundle(plan, output=Path('output'), destination=Path('dist')):
         f'{patcher.sha256(p)}  {p.name}\n' for p in (archive, destination / 'report.json')), encoding='utf-8')
     notes = (f'《IDOLY PRIDE》日服 {report["game_version"]} + Idoly-localify {report["module_version"]}。\n\n'
              f'- ARM64；LSPatch 修补，无需 Root。\n'
-             f'- UI 图片汉化：{"开启" if plan["ui_images"] else "关闭"}。\n'
+             '- 字体和 UI 汉化图片由插件在运行时提供，游戏原始资源保持不变。\n'
              f'- 原包签名匹配可信基准；全部 APK 与基准字节一致：{"是" if check["all_split_bytes_match"] else "否（签名校验通过）"}。\n'
              f'- 插件来源：[正式 Release](https://github.com/{patcher.RELEASES}/releases/tag/{plan["module_tag"]})。\n\n'
              '下载 ZIP 并解压，使用其中的安装脚本安装全部 APK；不能只安装 base.apk。\n'
@@ -210,7 +207,6 @@ def main():
     if args.command == 'plan':
         plan, needed = build_plan(os.environ.get('MODULE_TAG', '').strip() or None,
                                  os.environ.get('GAME_VERSION', patcher.TESTED_VERSION).strip(),
-                                 boolean(os.environ.get('UI_IMAGES', 'true')),
                                  os.environ.get('GAME_CHECK', 'signature'),
                                  boolean(os.environ.get('ALLOW_UNTESTED', 'false')))
         save_plan(plan, needed)

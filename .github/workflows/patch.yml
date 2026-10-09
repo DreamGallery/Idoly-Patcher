@@ -7,13 +7,9 @@ on:
         type: string
         required: false
       module_tag:
-        description: 插件发布版本（留空检测最新正式插件，如 v0.3.0）
+        description: 插件发布版本（留空检测最新正式插件，如 v0.4.0）
         type: string
         required: false
-      ui_images:
-        description: 应用首页、扭蛋、若恋和工作等 UI 汉化图片（仅兼容匹配的原版资源）
-        type: boolean
-        default: true
       allow_untested_version:
         description: 允许修补尚未验证兼容性的游戏版本
         type: boolean
@@ -46,7 +42,6 @@ jobs:
       contents: write
     env:
       GAME_VERSION: ${{ inputs.game_version || vars.GAME_VERSION || '6.0.2' }}
-      UI_IMAGES: ${{ !inputs.automatic && format('{0}', inputs.ui_images) || vars.UI_IMAGES || 'true' }}
       GAME_CHECK: ${{ !inputs.automatic && inputs.game_check || vars.GAME_CHECK || 'signature' }}
       ALLOW_UNTESTED: ${{ !inputs.automatic && format('{0}', inputs.allow_untested_version) || vars.ALLOW_UNTESTED_VERSION || 'false' }}
     steps:
@@ -75,9 +70,6 @@ jobs:
       - name: Install Android build tools
         if: steps.plan.outputs.build_needed == 'true'
         run: sdkmanager 'build-tools;35.0.0' 'platform-tools'
-      - name: Install image patch dependencies
-        if: steps.plan.outputs.build_needed == 'true'
-        run: python -m pip install -r requirements-images.txt
       - name: Test packager
         if: steps.plan.outputs.build_needed == 'true'
         run: python -m unittest discover -s tests -v
@@ -96,7 +88,6 @@ jobs:
           IDOLY_KEY_PASS: ${{ secrets.PATCH_KEY_PASSWORD }}
         run: |
           options=(--key-alias "$KEY_ALIAS" --module cache/module.apk --game-reference game-reference.json --game-check "$GAME_CHECK")
-          if [[ "$UI_IMAGES" != 'true' ]]; then options+=(--no-ui-images); fi
           if [[ "$ALLOW_UNTESTED" == 'true' ]]; then options+=(--allow-untested-version); fi
           python patcher.py patch "${options[@]}"
       - name: Bundle verified release

@@ -121,19 +121,19 @@ class PlanningTests(unittest.TestCase):
             response = [{'tag_name': 'text-new', 'assets': [{'name': 'manifest.json'}]}, plugin_release()]
             with patch.object(ci_release, 'recipe_hash', return_value='1' * 64), \
                     patch.object(ci_release, 'api', side_effect=[response, None, []]):
-                plan, needed = ci_release.build_plan(None, '6.0.2', True, 'signature', False)
+                plan, needed = ci_release.build_plan(None, '6.0.2', 'signature', False)
             self.assertTrue(needed)
             self.assertEqual(plan['module_tag'], 'v0.2.5')
             self.assertEqual(plan['module_sha256'], 'f' * 64)
             published = {'draft': False, 'assets': [{'name': n} for n in ci_release.release_assets(plan)]}
             with patch.object(ci_release, 'recipe_hash', return_value='1' * 64), \
                     patch.object(ci_release, 'api', side_effect=[response, published]):
-                repeated, needed = ci_release.build_plan(None, '6.0.2', True, 'signature', False)
+                repeated, needed = ci_release.build_plan(None, '6.0.2', 'signature', False)
             self.assertEqual(repeated, plan)
             self.assertFalse(needed)
             with patch.object(ci_release, 'recipe_hash', return_value='1' * 64), \
                     patch.object(ci_release, 'api', side_effect=[response, {'draft': True}]):
-                _, needed = ci_release.build_plan(None, '6.0.2', True, 'signature', False)
+                _, needed = ci_release.build_plan(None, '6.0.2', 'signature', False)
             self.assertTrue(needed)
 
     def test_permission_failure_is_not_mistaken_for_missing_release(self):
@@ -146,7 +146,7 @@ class PlanningTests(unittest.TestCase):
     def test_missing_reference_never_queries_upstream(self):
         with workspace(), patch.object(ci_release, 'api') as api:
             with self.assertRaises(FileNotFoundError):
-                ci_release.build_plan(None, '6.0.2', True, 'signature', False)
+                ci_release.build_plan(None, '6.0.2', 'signature', False)
             api.assert_not_called()
 
     def test_draft_is_found_when_the_tag_endpoint_returns_404(self):
@@ -206,9 +206,9 @@ class PublicationTests(unittest.TestCase):
         Path('output/install.ps1').write_text('install')
         plan = {'repository': 'owner/patcher', 'release_tag': 'game-6.0.2-plugin-0.2.5-test',
                 'game_version': '6.0.2', 'module_tag': 'v0.2.5', 'module_sha256': 'f' * 64,
-                'reference_sha256': 'a' * 64, 'ui_images': True, 'game_check': 'signature'}
+                'reference_sha256': 'a' * 64, 'game_check': 'signature'}
         report = {'game_version': '6.0.2', 'module_version': '0.2.5', 'module_sha256': 'f' * 64,
-                  'ui_images': {'enabled': True}, 'output_apks': {'base.apk': patcher.sha256('output/base.apk')},
+                  'game_resources_unchanged': True, 'output_apks': {'base.apk': patcher.sha256('output/base.apk')},
                   'game_source_verification': {'mode': 'signature', 'signer_match': True,
                                                'reference_sha256': 'a' * 64, 'all_split_bytes_match': True}}
         Path('output/report.json').write_text(json.dumps(report))
