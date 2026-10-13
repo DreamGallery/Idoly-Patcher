@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       game_version:
-        description: 游戏版本（留空使用仓库 GAME_VERSION，默认 6.0.3）
+        description: 游戏版本（默认从 Google Play 自动获取；可填具体版本或使用仓库 GAME_VERSION）
         type: string
         required: false
       module_tag:
@@ -41,7 +41,7 @@ jobs:
     permissions:
       contents: write
     env:
-      GAME_VERSION: ${{ inputs.game_version || vars.GAME_VERSION || '6.0.3' }}
+      GAME_VERSION: ${{ inputs.game_version || vars.GAME_VERSION || 'auto' }}
       GAME_CHECK: ${{ !inputs.automatic && inputs.game_check || vars.GAME_CHECK || 'signature' }}
       ALLOW_UNTESTED: ${{ !inputs.automatic && format('{0}', inputs.allow_untested_version) || vars.ALLOW_UNTESTED_VERSION || 'false' }}
     steps:
@@ -51,7 +51,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Detect plugin release
+      - name: Resolve game version and plugin release
         id: plan
         env:
           GH_TOKEN: ${{ github.token }}

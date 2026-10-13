@@ -12,6 +12,7 @@ from urllib.parse import quote
 from zipfile import ZipFile, ZIP_DEFLATED
 
 import patcher
+from app_version import resolve_version
 from game_source import load_reference
 
 PLAN = Path('cache/release-plan.json')
@@ -70,7 +71,7 @@ def boolean(value):
 
 
 def recipe_hash():
-    files = [Path(p) for p in ('patcher.py', 'game_source.py', 'ci_prepare.py', 'ci_release.py')]
+    files = [Path(p) for p in ('patcher.py', 'game_source.py', 'ci_prepare.py', 'ci_release.py', 'app_version.py')]
     digest = hashlib.sha256()
     for path in files:
         digest.update(path.as_posix().encode() + b'\0' + bytes.fromhex(patcher.sha256(path)))
@@ -83,8 +84,7 @@ def release_assets(plan):
 
 def build_plan(tag, game_version, game_check, allow_untested):
     load_reference(REFERENCE)
-    if not re.fullmatch(r'\d+(?:\.\d+)+', game_version):
-        raise ValueError('GAME_VERSION must be an explicit version such as 6.0.3')
+    game_version = resolve_version(game_version)
     if game_check not in ('signature', 'exact'):
         raise ValueError('GAME_CHECK must be signature or exact')
     if game_version not in patcher.COMPATIBLE_VERSIONS and not allow_untested:
@@ -115,7 +115,7 @@ def save_plan(plan, build_needed):
         with Path(output).open('a', encoding='utf-8') as stream:
             stream.write(f'build_needed={str(build_needed).lower()}\n')
             stream.write(f'release_tag={plan["release_tag"]}\n')
-    print(f'Plugin {plan["module_tag"]}: ' + ('build required' if build_needed else 'already published; skipped'))
+    print(f'Game {plan["game_version"]}, plugin {plan["module_tag"]}: ' + ('build required' if build_needed else 'already published; skipped'))
 
 
 def load_plan():
@@ -206,7 +206,7 @@ def main():
     args = parser.parse_args()
     if args.command == 'plan':
         plan, needed = build_plan(os.environ.get('MODULE_TAG', '').strip() or None,
-                                 os.environ.get('GAME_VERSION', patcher.TESTED_VERSION).strip(),
+                                 os.environ.get('GAME_VERSION', 'auto').strip(),
                                  os.environ.get('GAME_CHECK', 'signature'),
                                  boolean(os.environ.get('ALLOW_UNTESTED', 'false')))
         save_plan(plan, needed)

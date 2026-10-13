@@ -115,6 +115,27 @@ def plugin_release():
 
 
 class PlanningTests(unittest.TestCase):
+    def test_automatic_version_is_frozen_in_release_plan(self):
+        with workspace(), patch.dict(os.environ, {'GITHUB_REPOSITORY': 'owner/patcher'}):
+            Path('game-reference.json').write_text(json.dumps(reference()))
+            with patch.object(ci_release, 'resolve_version', return_value='6.0.3') as resolve, \
+                    patch.object(ci_release, 'recipe_hash', return_value='1' * 64), \
+                    patch.object(ci_release, 'api', side_effect=[[plugin_release()], None, []]):
+                plan, needed = ci_release.build_plan(None, 'auto', 'signature', False)
+            resolve.assert_called_once_with('auto')
+            self.assertEqual(plan['game_version'], '6.0.3')
+            self.assertIn('game-6.0.3-', plan['release_tag'])
+            self.assertTrue(needed)
+
+    def test_automatic_version_does_not_bypass_compatibility_check(self):
+        with workspace():
+            Path('game-reference.json').write_text(json.dumps(reference()))
+            with patch.object(ci_release, 'resolve_version', return_value='99.0.0'), \
+                    patch.object(ci_release, 'api') as api:
+                with self.assertRaisesRegex(ValueError, 'allow_untested_version'):
+                    ci_release.build_plan(None, 'auto', 'signature', False)
+                api.assert_not_called()
+
     def test_text_releases_do_not_trigger_and_existing_build_skips(self):
         with workspace(), patch.dict(os.environ, {'GITHUB_REPOSITORY': 'owner/patcher'}):
             Path('game-reference.json').write_text(json.dumps(reference()))
