@@ -23,8 +23,8 @@ if sys.version_info < (3, 11):
 GAME = 'game.qualiarts.idolypride'
 MODULE = 'io.github.dreamgallery.idoly.localify'
 RELEASES = 'DreamGallery/Idoly-localify-translations'
-TESTED_VERSION = '6.0.3'
-COMPATIBLE_VERSIONS = {'6.0.2', '6.0.3'}
+TESTED_VERSION = '6.1.0'
+COMPATIBLE_VERSIONS = {'6.0.2', '6.0.3', '6.1.0'}
 LSPATCH_URL = 'https://github.com/JingMatrix/LSPatch/releases/download/v1.2/lspatch-v1.2-487-release.jar'
 LSPATCH_SHA256 = 'd238fdc414d121b7fa454d8b4ccf420df3a8c97d563761861ff92bd9c5da2165'
 LIMIT = 2 * 1024**3
