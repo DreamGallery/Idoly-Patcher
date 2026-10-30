@@ -11,7 +11,7 @@
 | `ALLOW_UNTESTED_VERSION` | `false`；尝试其他游戏版本时显式设为 `true` |
 | `PATCH_KEY_ALIAS` | `idoly-patcher`，签名密钥别名 |
 
-默认下载地址固定为 `https://d.apkpure.com/b/XAPK/game.qualiarts.idolypride?version=latest`，由 APKPure 跳转到当前版本文件。可通过 Secret `GAME_APKS_URL` 覆盖；页面地址、临时 CDN 地址和单个 APK 不适合作为长期来源。版本自动获取失败会停止；下载包必须与本次解析的版本一致，不因下载站滞后而改用旧版。固定版本时可同时指定匹配的原包地址。新游戏版本仍需确认插件兼容性；`exact` 模式还需对应版本的基准。允许未测试版本不会绕过签名校验。
+默认下载地址固定为 `https://d.apkpure.com/b/XAPK/game.qualiarts.idolypride?version=latest`，由 APKPure 跳转到当前版本文件。可通过 Secret `GAME_APKS_URL` 覆盖；页面地址、临时 CDN 地址和单个 APK 不适合作为长期来源。版本自动获取失败会停止；下载包必须与本次解析的版本一致，不因下载站滞后而改用旧版。固定版本时可同时指定匹配的原包地址；`exact` 模式还需对应版本的基准。允许未测试版本不会绕过签名校验。
 
 自动联动由翻译仓库在插件发布成功后发送 `workflow_dispatch`。在 GitHub 创建仅授权此 Patcher 仓库、权限为 **Actions: Read and write** 的 fine-grained PAT，将其存入翻译仓库 `Settings → Environments → localization-release` 下的 `PATCHER_DISPATCH_TOKEN` Secret。Patcher 自身的附件发布使用内建 `GITHUB_TOKEN`；令牌到期后更新同名 Secret。
 
