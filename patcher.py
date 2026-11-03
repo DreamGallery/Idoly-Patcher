@@ -22,7 +22,7 @@ if sys.version_info < (3, 11):
 
 GAME = 'game.qualiarts.idolypride'
 MODULE = 'io.github.dreamgallery.idoly.localify'
-RELEASES = 'DreamGallery/Idoly-localify-translations'
+RELEASES = 'DreamGallery/Idoly-localify'
 TESTED_VERSION = '6.1.0'
 COMPATIBLE_VERSIONS = {'6.0.2', '6.0.3', '6.1.0'}
 LSPATCH_URL = 'https://github.com/JingMatrix/LSPatch/releases/download/v1.2/lspatch-v1.2-487-release.jar'
@@ -128,11 +128,12 @@ def github_json(endpoint):
 
 
 def plugin_asset(releases):
-    for release in releases:
-        if release.get('draft') or release.get('prerelease'):
-            continue
-        assets = [a for a in release.get('assets', [])
-                  if re.fullmatch(r'idoly-localify-[0-9][A-Za-z0-9._-]*\.apk', a['name'])]
+    candidates = [r for r in releases if not r.get('draft') and not r.get('prerelease')
+                  and re.fullmatch(r'v\d+\.\d+\.\d+', r.get('tag_name', ''))]
+    candidates.sort(key=lambda r: tuple(map(int, r['tag_name'][1:].split('.'))), reverse=True)
+    for release in candidates:
+        expected = 'idoly-localify-' + release['tag_name'][1:] + '.apk'
+        assets = [a for a in release.get('assets', []) if a['name'] == expected]
         if len(assets) == 1:
             asset = assets[0]
             digest = asset.get('digest') or ''

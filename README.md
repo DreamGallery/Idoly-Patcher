@@ -1,6 +1,6 @@
 # Idoly-Patcher
 
-将《IDOLY PRIDE／偶像荣耀》日服原版 APK 与 [Idoly-localify](https://github.com/DreamGallery/Idoly-localify-translations) 插件封装为无需 Root 的安装包，支持本地修补和 GitHub Actions 发布。
+将《IDOLY PRIDE／偶像荣耀》日服原版 APK 与 [Idoly-localify](https://github.com/DreamGallery/Idoly-localify) 插件封装为无需 Root 的安装包，支持本地修补和 GitHub Actions 发布。
 
 字体与 UI 汉化图片由插件在运行时提供。Patcher 保留游戏原始资源，只负责嵌入插件、签名和校验。x86 模拟器需支持 ARM64 转译。
 
@@ -17,13 +17,13 @@ Fork 或复制本仓库，打开 **Actions → Patch game APKs → Run workflow*
 | `PATCH_KEYSTORE_PASSWORD` | 密钥库密码 |
 | `PATCH_KEY_PASSWORD` | 可选，私钥密码与密钥库密码不同时填写 |
 
-插件默认使用最新正式版；游戏版本自动从 [Google Play](https://play.google.com/store/apps/details?id=game.qualiarts.idolypride) 获取，原包从 [APKPure 最新版入口](https://d.apkpure.com/b/XAPK/game.qualiarts.idolypride?version=latest) 下载。下载后校验官方签名与实际版本；下载站尚未同步或版本不匹配时停止。
+插件从 [Idoly-localify 发布页](https://github.com/DreamGallery/Idoly-localify/releases/tag/latest) 获取最新正式版；游戏版本自动从 [Google Play](https://play.google.com/store/apps/details?id=game.qualiarts.idolypride) 获取，原包从 [APKPure 最新版入口](https://d.apkpure.com/b/XAPK/game.qualiarts.idolypride?version=latest) 下载。下载后校验官方签名与实际版本；下载站尚未同步或版本不匹配时停止。
 
 修补完成后发布 APK 集合 ZIP、校验报告和 `SHA256SUMS`；Artifact 另保留 1 天。解压 ZIP 后使用其中的安装脚本，必须一起安装全部 APK。
 
 ### 自动跟随插件发布
 
-翻译仓库成功发布新版插件后，会直接触发本仓库修补。
+翻译仓库中的工作流将新版插件发布到 Idoly-localify 后，直接触发本仓库修补；修补后的游戏安装包仍发布在本仓库。
 
 游戏版本和校验方式可通过 Patcher 的仓库 Variables 配置，详见 [使用说明](docs/usage.md)。
 
