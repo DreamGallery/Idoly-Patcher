@@ -13,7 +13,7 @@
 
 默认下载地址固定为 `https://d.apkpure.com/b/XAPK/game.qualiarts.idolypride?version=latest`，由 APKPure 跳转到当前版本文件。可通过 Secret `GAME_APKS_URL` 覆盖；页面地址、临时 CDN 地址和单个 APK 不适合作为长期来源。版本自动获取失败会停止；下载包必须与本次解析的版本一致，不因下载站滞后而改用旧版。固定版本时可同时指定匹配的原包地址；`exact` 模式还需对应版本的基准。允许未测试版本不会绕过签名校验。
 
-自动联动由翻译仓库在插件发布成功后发送 `workflow_dispatch`。在 GitHub 创建仅授权此 Patcher 仓库、权限为 **Actions: Read and write** 的 fine-grained PAT，将其存入翻译仓库 `Settings → Environments → localization-release` 下的 `PATCHER_DISPATCH_TOKEN` Secret。Patcher 自身的附件发布使用内建 `GITHUB_TOKEN`；令牌到期后更新同名 Secret。
+插件 APK 从 `DreamGallery/Idoly-localify` 的版本 Release 下载。自动联动由翻译仓库的工作流在插件发布成功后发送 `workflow_dispatch`。在 GitHub 创建仅授权此 Patcher 仓库、权限为 **Actions: Read and write** 的 fine-grained PAT，将其存入翻译仓库 `Settings → Environments → localization-release` 下的 `PATCHER_DISPATCH_TOKEN` Secret。Patcher 自身的附件发布使用内建 `GITHUB_TOKEN`；令牌到期后更新同名 Secret。
 
 构建固定插件 APK 的 SHA-256，使用同一原版签名基准。全部验证通过后先上传草稿 Release，核对服务器端大小和 SHA-256，再正式发布；失败草稿可重试，不覆盖已发布版本。发布仅包含允许的安装文件和报告，不包含原始下载地址或私钥。
 

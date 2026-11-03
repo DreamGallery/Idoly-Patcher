@@ -27,10 +27,22 @@ class PatcherTests(unittest.TestCase):
         asset = {'name': 'idoly-localify-0.2.1.apk', 'digest': 'sha256:' + 'a' * 64,
                  'browser_download_url': 'https://github.com/' + patcher.RELEASES + '/releases/download/v0.2.1/idoly-localify-0.2.1.apk'}
         releases = [{'assets': [{'name': 'manifest.json'}]},
-                    {'prerelease': True, 'assets': [asset]}, {'assets': [asset]}]
+                    {'tag_name': 'v0.2.1', 'prerelease': True, 'assets': [asset]},
+                    {'tag_name': 'latest', 'assets': [asset]},
+                    {'tag_name': 'v0.2.1', 'assets': [asset]}]
         self.assertEqual(patcher.plugin_asset(releases), (asset, 'a' * 64))
         with self.assertRaisesRegex(ValueError, 'SHA-256'):
-            patcher.plugin_asset([{'assets': [{**asset, 'digest': None}]}])
+            patcher.plugin_asset([{'tag_name': 'v0.2.1', 'assets': [{**asset, 'digest': None}]}])
+
+    def test_plugin_selection_uses_version_order_after_historical_migration(self):
+        def released(version):
+            return {'tag_name': 'v' + version, 'assets': [{
+                'name': 'idoly-localify-' + version + '.apk',
+                'digest': 'sha256:' + 'a' * 64,
+                'browser_download_url': f'https://github.com/{patcher.RELEASES}/releases/download/v{version}/idoly-localify-{version}.apk'}]}
+        old, new = released('0.4.0'), released('0.7.0')
+        alias = {'tag_name': 'latest', 'assets': new['assets']}
+        self.assertEqual(patcher.plugin_asset([alias, old, new])[0], new['assets'][0])
 
     def test_signer_formats(self):
         for name in ('Signer', 'Signer #1', 'V3.0 Signer:'):
