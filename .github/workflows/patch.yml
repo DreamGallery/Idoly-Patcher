@@ -11,7 +11,7 @@ on:
         type: string
         required: false
       allow_untested_version:
-        description: 允许修补尚未验证兼容性的游戏版本
+        description: 允许跨主版本修补（如 6.x 升到 7.x）
         type: boolean
         default: false
       game_check:

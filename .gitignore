@@ -4,6 +4,7 @@
 /dist/
 /cache/
 /.analysis/
+/.agent-local/
 /secrets/
 *.apk
 *.apks

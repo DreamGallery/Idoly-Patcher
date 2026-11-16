@@ -17,6 +17,8 @@ import urllib.parse
 import urllib.request
 from zipfile import ZipFile, BadZipFile
 
+from app_version import validate_version
+
 if sys.version_info < (3, 11):
     raise SystemExit('Idoly-Patcher requires Python 3.11 or newer')
 
@@ -24,7 +26,6 @@ GAME = 'game.qualiarts.idolypride'
 MODULE = 'io.github.dreamgallery.idoly.localify'
 RELEASES = 'DreamGallery/Idoly-localify'
 TESTED_VERSION = '6.1.0'
-COMPATIBLE_VERSIONS = {'6.0.2', '6.0.3', '6.1.0'}
 LSPATCH_URL = 'https://github.com/JingMatrix/LSPatch/releases/download/v1.2/lspatch-v1.2-487-release.jar'
 LSPATCH_SHA256 = 'd238fdc414d121b7fa454d8b4ccf420df3a8c97d563761861ff92bd9c5da2165'
 LIMIT = 2 * 1024**3
@@ -197,6 +198,15 @@ def certificates(apk):
     return {c.lower() for c in certs}
 
 
+def validate_game_version(version, allow_untested=False):
+    version = validate_version(version)
+    if (int(version.split('.')[0]) != int(TESTED_VERSION.split('.')[0])
+            and not allow_untested):
+        raise ValueError(f'Game {version} changes the major version from {TESTED_VERSION}; '
+                         'set allow_untested_version (--allow-untested-version) after checking compatibility')
+    return version
+
+
 def validate_game(apks, allow_untested=False):
     if not apks:
         raise ValueError('No APK files found in --game-dir')
@@ -205,8 +215,7 @@ def validate_game(apks, allow_untested=False):
     if len(bases) != 1:
         raise ValueError('Provide exactly one base APK and its splits')
     base, info = bases[0]
-    if info.get('versionName') not in COMPATIBLE_VERSIONS and not allow_untested:
-        raise ValueError(f'Game {info.get("versionName")} is untested; use --allow-untested-version after checking compatibility')
+    validate_game_version(info.get('versionName'), allow_untested)
     certificate = certificates(base)
     splits = set()
     has_arm64 = False

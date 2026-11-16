@@ -87,8 +87,7 @@ def build_plan(tag, game_version, game_check, allow_untested):
     game_version = resolve_version(game_version)
     if game_check not in ('signature', 'exact'):
         raise ValueError('GAME_CHECK must be signature or exact')
-    if game_version not in patcher.COMPATIBLE_VERSIONS and not allow_untested:
-        raise ValueError('New game versions require explicit allow_untested_version approval')
+    patcher.validate_game_version(game_version, allow_untested)
     release, asset, digest = patcher.find_module_release(
         tag, loader=lambda endpoint: api(f'repos/{patcher.RELEASES}/{endpoint}'))
     plan = {'schema_version': 1, 'repository': repository(), 'game_version': game_version,

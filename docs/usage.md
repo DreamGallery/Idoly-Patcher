@@ -8,10 +8,10 @@
 | --- | --- |
 | `GAME_VERSION` | `auto`，从 Google Play 日服页面获取最新版本；可填具体版本号固定原包版本 |
 | `GAME_CHECK` | `signature`；可改为 `exact` |
-| `ALLOW_UNTESTED_VERSION` | `false`；尝试其他游戏版本时显式设为 `true` |
+| `ALLOW_UNTESTED_VERSION` | `false`；同一主版本的小更新自动通过，跨主版本修补时显式设为 `true`（如 6.x 升到 7.x） |
 | `PATCH_KEY_ALIAS` | `idoly-patcher`，签名密钥别名 |
 
-默认下载地址固定为 `https://d.apkpure.com/b/XAPK/game.qualiarts.idolypride?version=latest`，由 APKPure 跳转到当前版本文件。可通过 Secret `GAME_APKS_URL` 覆盖；页面地址、临时 CDN 地址和单个 APK 不适合作为长期来源。版本自动获取失败会停止；下载包必须与本次解析的版本一致，不因下载站滞后而改用旧版。固定版本时可同时指定匹配的原包地址；`exact` 模式还需对应版本的基准。允许未测试版本不会绕过签名校验。
+默认下载地址固定为 `https://d.apkpure.com/b/XAPK/game.qualiarts.idolypride?version=latest`，由 APKPure 跳转到当前版本文件。可通过 Secret `GAME_APKS_URL` 覆盖；页面地址、临时 CDN 地址和单个 APK 不适合作为长期来源。版本自动获取失败会停止；下载包必须与本次解析的版本一致，不因下载站滞后而改用旧版。固定版本时可同时指定匹配的原包地址；`exact` 模式还需对应版本的基准。允许跨主版本修补不会绕过签名校验。
 
 插件 APK 从 `DreamGallery/Idoly-localify` 的版本 Release 下载。自动联动由翻译仓库的工作流在插件发布成功后发送 `workflow_dispatch`。在 GitHub 创建仅授权此 Patcher 仓库、权限为 **Actions: Read and write** 的 fine-grained PAT，将其存入翻译仓库 `Settings → Environments → localization-release` 下的 `PATCHER_DISPATCH_TOKEN` Secret。Patcher 自身的附件发布使用内建 `GITHUB_TOKEN`；令牌到期后更新同名 Secret。
 
@@ -48,7 +48,7 @@ python3 game_source.py record --serial 设备序列号 --output new-reference.js
 
 - `--module-tag`：指定正式插件版本；`--module /path/to/plugin.apk` 使用本地插件。
 - `--game-check exact`：与 `--game-reference` 一起使用，要求精确匹配。
-- `--allow-untested-version`：允许尝试其他游戏版本，不绕过其余校验。
+- `--allow-untested-version`：允许跨主版本修补，不绕过其余校验。
 - `--output output/new-version`：使用新的输出目录。
 
 `inputs/`、`cache/`、`output/`、`dist/`、`secrets/` 与本地测试文件均由 `.gitignore` 排除。

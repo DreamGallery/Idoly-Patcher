@@ -10,6 +10,33 @@ import patcher
 
 
 class PatcherTests(unittest.TestCase):
+    def test_same_major_updates_pass_and_other_majors_require_override(self):
+        for version in ('6.0.2', '6.1.0', '6.1.1', '6.2.0', '6.99.999'):
+            with self.subTest(version=version):
+                self.assertEqual(patcher.validate_game_version(version), version)
+        for version in ('5.9.9', '7.0.0', '60.1.1'):
+            with self.subTest(version=version):
+                with self.assertRaisesRegex(ValueError, 'major version'):
+                    patcher.validate_game_version(version)
+                self.assertEqual(patcher.validate_game_version(version, True), version)
+        for version in (None, '', '6', '6.x.x', '6.1.1-beta'):
+            for override in (False, True):
+                with self.subTest(version=version, override=override), self.assertRaises(ValueError):
+                    patcher.validate_game_version(version, override)
+
+    def test_local_apk_validation_applies_the_same_major_policy(self):
+        with tempfile.TemporaryDirectory() as directory:
+            apk = Path(directory) / 'base.apk'
+            with ZipFile(apk, 'w') as archive:
+                archive.writestr('lib/arm64-v8a/libil2cpp.so', b'fixture')
+            base = {'name': patcher.GAME, 'versionCode': '414', 'versionName': '6.1.1'}
+            with patch.object(patcher, 'package', return_value=base), \
+                    patch.object(patcher, 'certificates', return_value={'a' * 64}):
+                self.assertEqual(patcher.validate_game([apk])[1]['versionName'], '6.1.1')
+            with patch.object(patcher, 'package', return_value={**base, 'versionName': '7.0.0'}):
+                with self.assertRaisesRegex(ValueError, 'major version'):
+                    patcher.validate_game([apk])
+
     def test_lspatch_java_rejects_old_runtime_before_patching(self):
         for version, supported in (('openjdk 17.0.20 2026-07-21', False),
                                    ('openjdk 21.0.9 2025-10-21 LTS', True),
